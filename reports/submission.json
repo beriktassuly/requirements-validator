@@ -1,0 +1,4596 @@
+{
+  "schema_version": 1,
+  "document": {
+    "name": "requirements.pdf",
+    "format": "pdf",
+    "sha256": "fd95de7df322d7a0597fbab6761af836c504e5e2220f54b144f9cbe3ff0e873a",
+    "line_count": 197,
+    "page_count": 4
+  },
+  "reviewed_at": "2026-11-25T22:08:02+05:00",
+  "model": "gpt-6.2-sol",
+  "provider": "openai",
+  "version": "0fd8b02afe673b162d2ec5a8db1e6e8cb3893ed2",
+  "requirements": [
+    {
+      "block": {
+        "id": "B019",
+        "section": "Уведомление о расходах по карте / Часть A. Новый функционал / Дизайн процесса UI",
+        "kind": "functional",
+        "start_line": 29,
+        "end_line": 29,
+        "text": "Карты → Расходы → Уведомления. На экране видны переключатель, поле «Порог, ₸», сумма за месяц и кнопка «Сохранить». При ошибке ввода сообщение появляется под полем.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "issue"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "issue"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B022",
+        "section": "Уведомление о расходах по карте / Часть A. Новый функционал / Требования к изменениям / BPMN схема процесса",
+        "kind": "process",
+        "start_line": 34,
+        "end_line": 34,
+        "text": "Проведение покупки → пересчёт расходов → проверка порога → при достижении отправка push → завершение.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B024",
+        "section": "Уведомление о расходах по карте / Часть A. Новый функционал / Требования к изменениям / Функциональные требования",
+        "kind": "functional",
+        "start_line": 37,
+        "end_line": 37,
+        "text": "* **Ф-1.** Держатель активной карты KZT задаёт целый порог от 1 000 до 1 000 000 ₸ включительно. По умолчанию уведомление выключено.",
+        "source_id": "Ф-1"
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "issue"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B025",
+        "section": "Уведомление о расходах по карте / Часть A. Новый функционал / Требования к изменениям / Функциональные требования",
+        "kind": "functional",
+        "start_line": 38,
+        "end_line": 38,
+        "text": "* **Ф-2.** Месяц определяется по дате совершения покупки в Алматы. В расходы входят проведённые покупки. Возврат уменьшает расходы месяца исходной покупки. Переводы и снятие наличных исключаются.",
+        "source_id": "Ф-2"
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "issue"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "issue"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B026",
+        "section": "Уведомление о расходах по карте / Часть A. Новый функционал / Требования к изменениям / Функциональные требования",
+        "kind": "functional",
+        "start_line": 39,
+        "end_line": 39,
+        "text": "* **Ф-3.** Когда расходы переходят от суммы ниже порога к сумме, равной порогу или выше, клиент получает push. На карту приходится максимум один такой push за календарный месяц.",
+        "source_id": "Ф-3"
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "uncertain"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "issue"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "issue"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B027",
+        "section": "Уведомление о расходах по карте / Часть A. Новый функционал / Требования к изменениям / Функциональные требования",
+        "kind": "functional",
+        "start_line": 40,
+        "end_line": 40,
+        "text": "* **Ф-4.** При изменении порога накопленная сумма сохраняется. Если она ниже нового порога, следующее достижение вызывает push независимо от истории предыдущей настройки.",
+        "source_id": "Ф-4"
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "issue"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "issue"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B029",
+        "section": "Уведомление о расходах по карте / Часть A. Новый функционал / Sequence Diagram",
+        "kind": "process",
+        "start_line": 43,
+        "end_line": 43,
+        "text": "Процессинг → сервис расходов: проведена покупка. Сервис расходов → настройки: получить порог карты. Сервис расходов → push: передать последние четыре цифры карты и сумму при достижении порога.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "issue"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "issue"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B031",
+        "section": "Уведомление о расходах по карте / Часть A. Новый функционал / Нефункциональные требования",
+        "kind": "nonfunctional",
+        "start_line": 46,
+        "end_line": 46,
+        "text": "Сервис передаёт push на отправку в течение минуты после получения события.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "issue"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "issue"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B033",
+        "section": "Уведомление о расходах по карте / Часть A. Новый функционал / Требования к данным",
+        "kind": "data",
+        "start_line": 49,
+        "end_line": 49,
+        "text": "Хранить идентификатор карты, месяц, идентификатор операции, сумму покупки в тиынах, признак отправки и порог в тенге.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "issue"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "issue"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B035",
+        "section": "Уведомление о расходах по карте / Часть A. Новый функционал / Требования к интеграции",
+        "kind": "integration",
+        "start_line": 52,
+        "end_line": 52,
+        "text": "Приложение читает и сохраняет настройки через дочерний документ «Уведомление о расходах по карте — REST API». Повторная доставка одного события процессинга сохраняет исходный итог.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "issue"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "issue"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B041",
+        "section": "Уведомление о расходах по карте / Часть A. Новый функционал / Критерии приемки",
+        "kind": "acceptance",
+        "start_line": 62,
+        "end_line": 62,
+        "text": "| Расходы 48 500 ₸, порог 50 000 ₸ | Провести покупку на 1 500 ₸ | Итог 50 000 ₸ и один push |",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "issue"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B042",
+        "section": "Уведомление о расходах по карте / Часть A. Новый функционал / Критерии приемки",
+        "kind": "acceptance",
+        "start_line": 63,
+        "end_line": 63,
+        "text": "| Покупка 31 января в 23:58 на 4 000 ₸ | Провести 1 февраля в 00:03 по Алматы | Февральский счётчик вырос на 4 000 ₸ |",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "issue"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "issue"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B043",
+        "section": "Уведомление о расходах по карте / Часть A. Новый функционал / Критерии приемки",
+        "kind": "acceptance",
+        "start_line": 64,
+        "end_line": 64,
+        "text": "| Расходы 19 900 ₸, порог 20 000 ₸ | Перевести 500 ₸ | Счётчик показывает 19 900 ₸ |",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B068",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Общие параметры",
+        "kind": "api",
+        "start_line": 102,
+        "end_line": 102,
+        "text": "| **Description** | Сохранение порога. Функциональные требования: чтение порога |",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "issue"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "uncertain"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B069",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Общие параметры",
+        "kind": "api",
+        "start_line": 103,
+        "end_line": 103,
+        "text": "| **REST type** | GET |",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "issue"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B070",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Общие параметры",
+        "kind": "api",
+        "start_line": 104,
+        "end_line": 104,
+        "text": "| **Authorization** | Bearer, сессия владельца карты |",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B071",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Общие параметры",
+        "kind": "api",
+        "start_line": 105,
+        "end_line": 105,
+        "text": "| **Controller** | AlertsController |",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B072",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Общие параметры",
+        "kind": "api",
+        "start_line": 106,
+        "end_line": 106,
+        "text": "| **URL type** | Dev / Prod |",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "uncertain"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B073",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Общие параметры",
+        "kind": "api",
+        "start_line": 107,
+        "end_line": 107,
+        "text": "| **Request URL** | Dev: `/alerts/saveLimit` . Prod: — |",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "uncertain"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B075",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Общие параметры",
+        "kind": "api",
+        "start_line": 109,
+        "end_line": 109,
+        "text": "| **Swagger** | — |",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "not_applicable"
+        },
+        {
+          "criterion": "completeness",
+          "status": "uncertain"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "uncertain"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "uncertain"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "not_applicable"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B081",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Логика работы метода",
+        "kind": "api",
+        "start_line": 116,
+        "end_line": 116,
+        "text": "1. Проверить пользовательскую сессию.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "uncertain"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B082",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Логика работы метода",
+        "kind": "api",
+        "start_line": 117,
+        "end_line": 117,
+        "text": "2. Проверить принадлежность карты клиенту.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "issue"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B083",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Логика работы метода",
+        "kind": "api",
+        "start_line": 118,
+        "end_line": 118,
+        "text": "3. Проверить сумму и переключатель.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "issue"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "issue"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B084",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Логика работы метода",
+        "kind": "api",
+        "start_line": 119,
+        "end_line": 119,
+        "text": "4. Заменить настройку и вернуть результат сохранения.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "issue"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "issue"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "uncertain"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B085",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Логика работы метода",
+        "kind": "api",
+        "start_line": 120,
+        "end_line": 120,
+        "text": "5. При отклонении суммы вернуть прежнее состояние и результат ERROR.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "issue"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "issue"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B087",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Особые правила",
+        "kind": "api",
+        "start_line": 123,
+        "end_line": 123,
+        "text": "1. Целое число тенге, обе границы включены.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B088",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Особые правила",
+        "kind": "api",
+        "start_line": 124,
+        "end_line": 124,
+        "text": "2. Повторное сохранение заменяет действующую настройку.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "issue"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B089",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Особые правила",
+        "kind": "api",
+        "start_line": 125,
+        "end_line": 125,
+        "text": "3. Изменение порога сохраняет накопленные расходы.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B094",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Параметры запроса / Path-параметры",
+        "kind": "api",
+        "start_line": 135,
+        "end_line": 135,
+        "text": "Не используются.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B097",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Параметры запроса / Query-параметры",
+        "kind": "api",
+        "start_line": 141,
+        "end_line": 141,
+        "text": "| `cardId` | string | 1–64 | Да | Карта клиента | Идентификатор карты | `card_id` |",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "issue"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B098",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Параметры запроса / Query-параметры",
+        "kind": "api",
+        "start_line": 142,
+        "end_line": 142,
+        "text": "| `amount` | integer | 32 bit | Да | 1 000–1 000 000 | Порог в тенге | `limit_kzt` |",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "issue"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B099",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Параметры запроса / Query-параметры",
+        "kind": "api",
+        "start_line": 143,
+        "end_line": 143,
+        "text": "| `enabled` | integer | 1 знак | Да | 0 или 1 | Признак включения | `enabled` |",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B101",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Параметры запроса / Request body",
+        "kind": "api",
+        "start_line": 146,
+        "end_line": 146,
+        "text": "* **Content-Type:** `application/json` .",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "issue"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B102",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Параметры запроса / Request body",
+        "kind": "api",
+        "start_line": 147,
+        "end_line": 147,
+        "text": "* Тело не используется.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B104",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Ответ",
+        "kind": "api",
+        "start_line": 150,
+        "end_line": 150,
+        "text": "Если результат 200 или 201 — успешный. Если результат 400, 401 и далее — неуспешный.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "issue"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "issue"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B106",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Ответ",
+        "kind": "api",
+        "start_line": 154,
+        "end_line": 154,
+        "text": "| `result` | string | OK / ERROR | Исход сохранения | — |",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B107",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Ответ",
+        "kind": "api",
+        "start_line": 155,
+        "end_line": 155,
+        "text": "| `amount` | string | При успехе | Порог в тенге | `limit_kzt` |",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "issue"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B108",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Ответ",
+        "kind": "api",
+        "start_line": 156,
+        "end_line": 156,
+        "text": "| `enabled` | string | «0» или «1» | Признак включения | `enabled` |",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B109",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Ответ",
+        "kind": "api",
+        "start_line": 157,
+        "end_line": 157,
+        "text": "| `message` | string | При ошибке | Описание ошибки | — |",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B111",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Статусы",
+        "kind": "api",
+        "start_line": 161,
+        "end_line": 161,
+        "text": "**200.** Ответ в случае успешного выполнения метода.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "issue"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B112",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Статусы",
+        "kind": "api",
+        "start_line": 162,
+        "end_line": 162,
+        "text": "**400.** Ответ в случае, если параметры запроса заполнены неверно.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "uncertain"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "issue"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B117",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Статусы / 200. Successful — Created",
+        "kind": "api",
+        "start_line": 173,
+        "end_line": 173,
+        "text": "**401.** Ответ в случае, если запрос выполнен без необходимой авторизации.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "issue"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B118",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Статусы / 200. Successful — Created",
+        "kind": "api",
+        "start_line": 174,
+        "end_line": 174,
+        "text": "**403.** Ответ в случае, если на указанный ресурс доступ запрещен.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "issue"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "uncertain"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B119",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Статусы / 200. Successful — Created",
+        "kind": "api",
+        "start_line": 175,
+        "end_line": 175,
+        "text": "**500.** Ответ в случае, если произошла внутренняя ошибка сервера.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "pass"
+        },
+        {
+          "criterion": "completeness",
+          "status": "issue"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "block": {
+        "id": "B125",
+        "section": "Уведомление о расходах по карте / Часть B. REST API / Статусы / 403. Unsuccessful — Forbidden",
+        "kind": "api",
+        "start_line": 188,
+        "end_line": 188,
+        "text": "Для чужой карты возвращается 404, как и для отсутствующей карты.",
+        "source_id": null
+      },
+      "checks": [
+        {
+          "criterion": "contradiction",
+          "status": "issue"
+        },
+        {
+          "criterion": "completeness",
+          "status": "pass"
+        },
+        {
+          "criterion": "ambiguity",
+          "status": "pass"
+        },
+        {
+          "criterion": "verifiability",
+          "status": "pass"
+        },
+        {
+          "criterion": "atomicity",
+          "status": "pass"
+        }
+      ]
+    }
+  ],
+  "set_checks": [
+    {
+      "criterion": "contradiction",
+      "status": "issue"
+    },
+    {
+      "criterion": "completeness",
+      "status": "issue"
+    },
+    {
+      "criterion": "ambiguity",
+      "status": "issue"
+    },
+    {
+      "criterion": "verifiability",
+      "status": "issue"
+    },
+    {
+      "criterion": "duplication",
+      "status": "issue"
+    },
+    {
+      "criterion": "traceability",
+      "status": "issue"
+    }
+  ],
+  "link_checks": [
+    {
+      "relation": "functional_acceptance",
+      "status": "issue"
+    },
+    {
+      "relation": "business_api",
+      "status": "issue"
+    },
+    {
+      "relation": "data_api",
+      "status": "issue"
+    },
+    {
+      "relation": "status_examples",
+      "status": "issue"
+    }
+  ],
+  "findings": [
+    {
+      "criterion": "contradiction",
+      "severity": "critical",
+      "title": "Правило учёта и приёмка относят одну покупку к разным месяцам",
+      "description": "Ф-2 использует дату совершения покупки, а критерий приёмки ожидает рост февральского счётчика после февральского проведения январской покупки. Один результат не может удовлетворить обеим проверкам; выбор месяца также меняет итог, сравниваемый с порогом.",
+      "recommendation": "Закрепить одну дату для отнесения покупки к месяцу и привести Ф-2 и критерий приёмки в соответствие. Если сохраняется правило Ф-2, в примере должен увеличиться январский итог, а февральский остаться прежним.",
+      "scenario": "По времени Алматы покупка на 4 000 ₸ совершена 31 января в 23:58 и проведена 1 февраля в 00:03. Ф-2 относит её к январю, а критерий приёмки требует увеличить расходы февраля.",
+      "requirement_ids": [
+        "B025",
+        "B042"
+      ],
+      "evidence": [
+        {
+          "block_id": "B025",
+          "quote": "Месяц определяется по дате совершения покупки в Алматы. В расходы входят проведённые покупки.",
+          "start_line": 38,
+          "end_line": 38,
+          "start_col": 12,
+          "end_col": 104,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B042",
+          "quote": "| Покупка 31 января в 23:58 на 4 000 ₸ | Провести 1 февраля в 00:03 по Алматы | Февральский счётчик вырос на 4 000 ₸ |",
+          "start_line": 63,
+          "end_line": 63,
+          "start_col": 1,
+          "end_col": 118,
+          "page_start": 2,
+          "page_end": 2
+        }
+      ],
+      "scopes": [
+        "local",
+        "set"
+      ],
+      "id": "D-001",
+      "related_criteria": [],
+      "additional_recommendations": [
+        "Согласовать единое правило выбора месяца. Если сохраняется Ф-2, после проведения покупки ожидать увеличения январского счётчика на 4 000 ₸ без изменения февральского.",
+        "Выбрать дату, определяющую месяц. Если сохраняется Ф-2, в критерии приёмки указать увеличение январского счётчика и неизменность февральского; явно задать обе даты по времени Алматы."
+      ]
+    },
+    {
+      "criterion": "contradiction",
+      "severity": "critical",
+      "title": "Повторный push после смены порога конфликтует с месячным лимитом Ф-3",
+      "description": "Ф-4 требует отправки при следующем достижении нового порога независимо от истории предыдущей настройки. Если по старой настройке уже был push в том же месяце, Ф-3 запрещает повторную отправку. Разработчик и тестировщик не могут выбрать результат, который соблюдает оба правила B026 и B027.",
+      "recommendation": "Явно решить, сохраняется ли месячный лимит после изменения порога. Если сохраняется, подчинить Ф-4 лимиту Ф-3; если изменение разрешает повторную отправку, зафиксировать исключение в Ф-3. Добавить критерий приёмки для второго достижения в том же месяце.",
+      "scenario": "Уведомление включено. Карта уже получила push при достижении 50 000 ₸. В том же месяце клиент повышает порог до 60 000 ₸ при расходах 55 000 ₸. Следующая покупка доводит итог до 60 000 ₸: Ф-4 требует новый push, а Ф-3 его запрещает.",
+      "requirement_ids": [
+        "B026",
+        "B027"
+      ],
+      "evidence": [
+        {
+          "block_id": "B026",
+          "quote": "На карту приходится максимум один такой push за календарный месяц.",
+          "start_line": 39,
+          "end_line": 39,
+          "start_col": 112,
+          "end_col": 177,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B027",
+          "quote": "Если она ниже нового порога, следующее достижение вызывает push независимо от истории предыдущей настройки.",
+          "start_line": 40,
+          "end_line": 40,
+          "start_col": 64,
+          "end_col": 170,
+          "page_start": 1,
+          "page_end": 1
+        }
+      ],
+      "scopes": [
+        "local",
+        "set"
+      ],
+      "id": "D-002",
+      "related_criteria": [],
+      "additional_recommendations": [
+        "Установить приоритет: либо смена порога не сбрасывает месячный признак отправки, либо для неё действует явно описанное исключение из Ф-3. Закрепить выбранный вариант в приёмке."
+      ]
+    },
+    {
+      "criterion": "contradiction",
+      "severity": "critical",
+      "title": "Один метод описан и как чтение, и как сохранение",
+      "description": "Строка B068 называет одну операцию сохранением и чтением, а алгоритм прямо требует заменить настройку. Для запроса, в котором переданный порог отличается от сохранённого, разработчик и тестировщик не могут выбрать единый ожидаемый результат: возврат текущего значения без изменения или запись нового.",
+      "recommendation": "Обозначить описанный метод как сохранение, согласовать его описание с алгоритмом, а чтение вынести в отдельный контракт.",
+      "scenario": "Владелец карты с сохранённым порогом 40 000 ₸ отправляет корректный запрос с суммой 50 000 ₸. Чтение должно оставить 40 000 ₸, а сохранение — заменить порог на 50 000 ₸.",
+      "requirement_ids": [
+        "B035",
+        "B068",
+        "B069",
+        "B073",
+        "B084",
+        "B098",
+        "B099"
+      ],
+      "evidence": [
+        {
+          "block_id": "B035",
+          "quote": "Приложение читает и сохраняет настройки через дочерний документ «Уведомление о расходах по карте — REST API».",
+          "start_line": 52,
+          "end_line": 52,
+          "start_col": 1,
+          "end_col": 109,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B068",
+          "quote": "Сохранение порога. Функциональные требования: чтение порога",
+          "start_line": 102,
+          "end_line": 102,
+          "start_col": 21,
+          "end_col": 79,
+          "page_start": 2,
+          "page_end": 2
+        },
+        {
+          "block_id": "B069",
+          "quote": "| **REST type** | GET |",
+          "start_line": 103,
+          "end_line": 103,
+          "start_col": 1,
+          "end_col": 23,
+          "page_start": 2,
+          "page_end": 2
+        },
+        {
+          "block_id": "B073",
+          "quote": "Dev: `/alerts/saveLimit` . Prod: —",
+          "start_line": 107,
+          "end_line": 107,
+          "start_col": 21,
+          "end_col": 54,
+          "page_start": 2,
+          "page_end": 2
+        },
+        {
+          "block_id": "B084",
+          "quote": "4. Заменить настройку и вернуть результат сохранения.",
+          "start_line": 119,
+          "end_line": 119,
+          "start_col": 1,
+          "end_col": 53,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B098",
+          "quote": "| `amount` | integer | 32 bit | Да | 1 000–1 000 000 | Порог в тенге | `limit_kzt` |",
+          "start_line": 142,
+          "end_line": 142,
+          "start_col": 1,
+          "end_col": 84,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B099",
+          "quote": "| `enabled` | integer | 1 знак | Да | 0 или 1 | Признак включения | `enabled` |",
+          "start_line": 143,
+          "end_line": 143,
+          "start_col": 1,
+          "end_col": 79,
+          "page_start": 3,
+          "page_end": 3
+        }
+      ],
+      "scopes": [
+        "local",
+        "set"
+      ],
+      "id": "D-003",
+      "related_criteria": [
+        "completeness"
+      ],
+      "additional_recommendations": [
+        "Описать в части B отдельную операцию чтения без изменения состояния: метод и путь, идентификатор карты, поля ответа и результат при отсутствии сохранённой настройки. Явно отделить её от операции сохранения.",
+        "Закрепить B084 за операцией сохранения и убрать указание на чтение из её описания. Отдельно описать операцию чтения и явно указать, что она не меняет состояние.",
+        "Развести контракты: GET для чтения без изменения состояния и отдельный метод записи, например PUT. Для каждого задать маршрут, параметры, ответ и поведение при отсутствии настройки; обновить пример вызова.",
+        "Определить для чтения метод и путь, входные параметры, поля ответа и результат при отсутствии сохранённой настройки."
+      ]
+    },
+    {
+      "criterion": "completeness",
+      "severity": "major",
+      "title": "Не задано начальное состояние порога",
+      "description": "Для новой настройки указан выключенный переключатель, но не сказано, существует ли порог до первого сохранения. При этом API требует передавать сумму даже при выключенном уведомлении. Разработчику придётся самостоятельно выбрать, что показывать в поле и можно ли сохранять выключенную настройку без ввода суммы.",
+      "recommendation": "Определить значение или отсутствие порога до первого сохранения и согласовать с этим обязательность суммы при сохранении выключенной настройки.",
+      "scenario": "Клиент впервые открывает экран, оставляет переключатель выключенным и нажимает «Сохранить», не вводя сумму.",
+      "requirement_ids": [
+        "B019",
+        "B024",
+        "B098",
+        "B099"
+      ],
+      "evidence": [
+        {
+          "block_id": "B019",
+          "quote": "На экране видны переключатель, поле «Порог, ₸», сумма за месяц и кнопка «Сохранить».",
+          "start_line": 29,
+          "end_line": 29,
+          "start_col": 32,
+          "end_col": 115,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B024",
+          "quote": "По умолчанию уведомление выключено.",
+          "start_line": 37,
+          "end_line": 37,
+          "start_col": 98,
+          "end_col": 132,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B098",
+          "quote": "| `amount` | integer | 32 bit | Да | 1 000–1 000 000 | Порог в тенге | `limit_kzt` |",
+          "start_line": 142,
+          "end_line": 142,
+          "start_col": 1,
+          "end_col": 84,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B099",
+          "quote": "| `enabled` | integer | 1 знак | Да | 0 или 1 | Признак включения | `enabled` |",
+          "start_line": 143,
+          "end_line": 143,
+          "start_col": 1,
+          "end_col": 79,
+          "page_start": 3,
+          "page_end": 3
+        }
+      ],
+      "scopes": [
+        "local",
+        "set"
+      ],
+      "id": "D-004",
+      "related_criteria": [],
+      "additional_recommendations": [
+        "Задать начальное значение или явное отсутствие порога. Указать, обязателен ли `amount` при `enabled=0` и сохраняется ли ранее заданный порог при выключении."
+      ]
+    },
+    {
+      "criterion": "completeness",
+      "severity": "major",
+      "title": "Не указан источник отображаемой суммы расходов",
+      "description": "Экран должен показывать сумму за месяц, но указанный контракт относится к настройкам и не определяет, откуда приложение получает рассчитанные расходы. Разработчик может взять сумму из истории операций, которая не совпадёт с итогом, используемым для уведомления.",
+      "recommendation": "Указать источник месячного итога для выбранной карты. Если источник уже существует, сослаться на его контракт и указать, какой показатель выводится на экран.",
+      "scenario": "Покупку прошлого месяца вернули в текущем месяце. Экран не должен вычитать возврат из текущего итога, если учёт расходов относит его к месяцу покупки.",
+      "requirement_ids": [
+        "B019",
+        "B025",
+        "B035"
+      ],
+      "evidence": [
+        {
+          "block_id": "B019",
+          "quote": "На экране видны переключатель, поле «Порог, ₸», сумма за месяц и кнопка «Сохранить».",
+          "start_line": 29,
+          "end_line": 29,
+          "start_col": 32,
+          "end_col": 115,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B025",
+          "quote": "Возврат уменьшает расходы месяца исходной покупки.",
+          "start_line": 38,
+          "end_line": 38,
+          "start_col": 106,
+          "end_col": 155,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B035",
+          "quote": "Приложение читает и сохраняет настройки через дочерний документ «Уведомление о расходах по карте — REST API».",
+          "start_line": 52,
+          "end_line": 52,
+          "start_col": 1,
+          "end_col": 109,
+          "page_start": 1,
+          "page_end": 1
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-005",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "traceability",
+      "severity": "major",
+      "title": "Для месячной суммы на экране не указан источник данных",
+      "description": "UI требует показать сумму за месяц, но описанный ответ API содержит порог, переключатель и результат сохранения. Не указан ни метод получения расходов, ни поле, которое связывает показанное значение с месячным счётчиком. Клиент не может реализовать отображение по этому контракту, а тестировщик — сверить его с учётом.",
+      "recommendation": "Сослаться на метод чтения месячной суммы либо добавить её в контракт чтения. Указать поле, его тип, единицу, карту и месяц, к которым относится значение. Сохранить различие между суммой расходов и порогом.",
+      "scenario": "Для карты сохранён порог 50 000 ₸, а расходы за месяц составляют 48 500 ₸. Экран должен получить и показать оба значения раздельно.",
+      "requirement_ids": [
+        "B019",
+        "B033",
+        "B107"
+      ],
+      "evidence": [
+        {
+          "block_id": "B019",
+          "quote": "поле «Порог, ₸», сумма за месяц и кнопка «Сохранить»",
+          "start_line": 29,
+          "end_line": 29,
+          "start_col": 63,
+          "end_col": 114,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B033",
+          "quote": "сумму покупки в тиынах",
+          "start_line": 49,
+          "end_line": 49,
+          "start_col": 61,
+          "end_col": 82,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B107",
+          "quote": "| `amount` | string | При успехе | Порог в тенге | `limit_kzt` |",
+          "start_line": 155,
+          "end_line": 155,
+          "start_col": 1,
+          "end_col": 64,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B114",
+          "quote": "{\"result\":\"OK\",\"amount\":\"50000\",\"enabled\":\"1\"}",
+          "start_line": 166,
+          "end_line": 166,
+          "start_col": 1,
+          "end_col": 46,
+          "page_start": 4,
+          "page_end": 4
+        }
+      ],
+      "scopes": [
+        "set"
+      ],
+      "id": "D-006",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "completeness",
+      "severity": "major",
+      "title": "Переключатель не связан с учётом расходов и условием отправки",
+      "description": "Ф-1 задаёт выключенное состояние по умолчанию, API сохраняет `enabled`, но процесс получает только порог, а требования к данным называют только признак отправки. Не определено, продолжается ли учёт при выключении и что делает сервис при последующем включении. Исполнители могут принять разные решения или смешать настройку с признаком уже отправленного push.",
+      "recommendation": "Разделить `enabled` и месячный признак отправки в модели данных. Указать, как сервис расходов получает `enabled`, ведётся ли учёт при выключении и вызывает ли включение push при уже достигнутом пороге.",
+      "scenario": "Карта выключена, расходы выросли с 49 000 до 51 000 ₸ при пороге 50 000 ₸. Затем клиент включает уведомления без новой покупки.",
+      "requirement_ids": [
+        "B022",
+        "B024",
+        "B026",
+        "B029",
+        "B033",
+        "B099"
+      ],
+      "evidence": [
+        {
+          "block_id": "B022",
+          "quote": "Проведение покупки → пересчёт расходов → проверка порога → при достижении отправка push → завершение.",
+          "start_line": 34,
+          "end_line": 34,
+          "start_col": 1,
+          "end_col": 101,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B024",
+          "quote": "По умолчанию уведомление выключено.",
+          "start_line": 37,
+          "end_line": 37,
+          "start_col": 98,
+          "end_col": 132,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B026",
+          "quote": "Когда расходы переходят от суммы ниже порога к сумме, равной порогу или выше, клиент получает push.",
+          "start_line": 39,
+          "end_line": 39,
+          "start_col": 12,
+          "end_col": 110,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B029",
+          "quote": "Сервис расходов → настройки: получить порог карты.",
+          "start_line": 43,
+          "end_line": 43,
+          "start_col": 50,
+          "end_col": 99,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B033",
+          "quote": "Хранить идентификатор карты, месяц, идентификатор операции, сумму покупки в тиынах, признак отправки и порог в тенге.",
+          "start_line": 49,
+          "end_line": 49,
+          "start_col": 1,
+          "end_col": 117,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B099",
+          "quote": "Признак включения | `enabled`",
+          "start_line": 143,
+          "end_line": 143,
+          "start_col": 49,
+          "end_col": 77,
+          "page_start": 3,
+          "page_end": 3
+        }
+      ],
+      "scopes": [
+        "local",
+        "set"
+      ],
+      "id": "D-007",
+      "related_criteria": [],
+      "additional_recommendations": [
+        "После пересчёта добавить развилку: при выполнении условий отправки передать push, иначе завершить обработку без push. В обеих ветвях зафиксировать результат пересчёта, а условия отправки задать ссылкой на согласованные функциональные правила."
+      ]
+    },
+    {
+      "criterion": "completeness",
+      "severity": "major",
+      "title": "Не определён результат сохранения для неподходящей карты",
+      "description": "Ф-1 ограничивает настройку активными картами KZT, но логика сохранения проверяет принадлежность карты, сумму и переключатель, не указывая проверку статуса и валюты. Приложение может скрыть настройку, а сервис всё равно принять запрос, например если карта перестала быть активной после открытия экрана.",
+      "recommendation": "Указать, что сервис проверяет статус и валюту карты при сохранении, и определить ответ для неподходящей карты без изменения настройки.",
+      "scenario": "Клиент открыл экран для активной карты KZT, затем карта перестала быть активной. Клиент сохраняет допустимый порог с уже открытого экрана.",
+      "requirement_ids": [
+        "B024",
+        "B082",
+        "B083",
+        "B084",
+        "B097"
+      ],
+      "evidence": [
+        {
+          "block_id": "B024",
+          "quote": "Держатель активной карты KZT задаёт целый порог от 1 000 до 1 000 000 ₸ включительно.",
+          "start_line": 37,
+          "end_line": 37,
+          "start_col": 12,
+          "end_col": 96,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B082",
+          "quote": "2. Проверить принадлежность карты клиенту.",
+          "start_line": 117,
+          "end_line": 117,
+          "start_col": 1,
+          "end_col": 42,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B083",
+          "quote": "3. Проверить сумму и переключатель.",
+          "start_line": 118,
+          "end_line": 118,
+          "start_col": 1,
+          "end_col": 35,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B084",
+          "quote": "4. Заменить настройку и вернуть результат сохранения.",
+          "start_line": 119,
+          "end_line": 119,
+          "start_col": 1,
+          "end_col": 53,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B097",
+          "quote": "| `cardId` | string | 1–64 | Да | Карта клиента | Идентификатор карты | `card_id` |",
+          "start_line": 141,
+          "end_line": 141,
+          "start_col": 1,
+          "end_col": 83,
+          "page_start": 3,
+          "page_end": 3
+        }
+      ],
+      "scopes": [
+        "local",
+        "set"
+      ],
+      "id": "D-008",
+      "related_criteria": [],
+      "additional_recommendations": [
+        "Добавить отдельное условие допуска по статусу и валюте карты, указать источник этих признаков и зафиксировать ответ при отказе без изменения настройки.",
+        "Указать, проверяет ли метод активность и валюту карты при сохранении; для каждой причины отказа зафиксировать HTTP-статус и тело ответа.",
+        "Указать, какие операции API проверяют активность и валюту карты, и задать статус, тело ответа и отсутствие изменения настройки при отказе."
+      ]
+    },
+    {
+      "criterion": "traceability",
+      "severity": "major",
+      "title": "Ключевые ветви расчёта и проверки порога не покрыты приёмкой",
+      "description": "В приёмке есть точное равенство порогу, покупка на границе месяцев и исключение перевода. Нет отдельных ожидаемых результатов для пересечения порога с превышением, снятия наличных, возврата и проверки границ допустимого порога. Успех текущих проверок не выявит, например, ошибочное сравнение только на равенство или приём порога за пределами диапазона.",
+      "recommendation": "Добавить привязанные к Ф-1–Ф-3 сценарии: обе допустимые границы и значения непосредственно за ними, недопустимая дробная сумма, пересечение с превышением, снятие наличных и возврат в месяц исходной покупки. Для исключённых операций проверять и неизменность суммы, и отсутствие push.",
+      "scenario": "При расходах 48 500 ₸ и пороге 50 000 ₸ покупка на 1 501 ₸ должна вызвать push; проверка только покупки на 1 500 ₸ ошибку сравнения не выявит.",
+      "requirement_ids": [
+        "B024",
+        "B025",
+        "B026",
+        "B041",
+        "B043"
+      ],
+      "evidence": [
+        {
+          "block_id": "B024",
+          "quote": "целый порог от 1 000 до 1 000 000 ₸ включительно",
+          "start_line": 37,
+          "end_line": 37,
+          "start_col": 48,
+          "end_col": 95,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B025",
+          "quote": "Возврат уменьшает расходы месяца исходной покупки. Переводы и снятие наличных исключаются.",
+          "start_line": 38,
+          "end_line": 38,
+          "start_col": 106,
+          "end_col": 195,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B026",
+          "quote": "к сумме, равной порогу или выше",
+          "start_line": 39,
+          "end_line": 39,
+          "start_col": 57,
+          "end_col": 87,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B041",
+          "quote": "Провести покупку на 1 500 ₸ | Итог 50 000 ₸ и один push",
+          "start_line": 62,
+          "end_line": 62,
+          "start_col": 38,
+          "end_col": 92,
+          "page_start": 2,
+          "page_end": 2
+        },
+        {
+          "block_id": "B043",
+          "quote": "Перевести 500 ₸ | Счётчик показывает 19 900 ₸",
+          "start_line": 64,
+          "end_line": 64,
+          "start_col": 38,
+          "end_col": 82,
+          "page_start": 2,
+          "page_end": 2
+        }
+      ],
+      "scopes": [
+        "set"
+      ],
+      "id": "D-009",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "completeness",
+      "severity": "major",
+      "title": "Не описано первое сохранение при отсутствии настройки",
+      "description": "Для существующей настройки указана замена, но выключенное уведомление по умолчанию не означает, что у карты уже есть запись для замены. Разработчик может предусмотреть создание настройки либо реализовать только обновление, при котором первое сохранение не сработает.",
+      "recommendation": "Указать результат первого корректного сохранения при отсутствии записи: создать настройку или явно сослаться на правило, гарантирующее наличие начальной настройки.",
+      "scenario": "Держатель новой активной карты KZT впервые задаёт порог и включает уведомление; отдельная настройка для карты ещё не сохранена.",
+      "requirement_ids": [
+        "B024",
+        "B084",
+        "B088"
+      ],
+      "evidence": [
+        {
+          "block_id": "B024",
+          "quote": "По умолчанию уведомление выключено.",
+          "start_line": 37,
+          "end_line": 37,
+          "start_col": 98,
+          "end_col": 132,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B084",
+          "quote": "Заменить настройку и вернуть результат сохранения.",
+          "start_line": 119,
+          "end_line": 119,
+          "start_col": 4,
+          "end_col": 53,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B088",
+          "quote": "Повторное сохранение заменяет действующую настройку.",
+          "start_line": 124,
+          "end_line": 124,
+          "start_col": 4,
+          "end_col": 55,
+          "page_start": 3,
+          "page_end": 3
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-010",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "verifiability",
+      "severity": "major",
+      "title": "Критерий первого push не фиксирует исходное состояние и наблюдаемую границу",
+      "description": "В приёмке заданы расходы и порог, но не указано, что уведомление включено и в этом месяце push ещё не было. Кроме того, Ф-3 говорит о получении клиентом, а минута нормирована только до передачи на отправку. Тест на устройстве и тест по вызову сервиса могут дать разные результаты.",
+      "recommendation": "Дополнить сценарий состояниями `enabled=1` и «push в проверяемом месяце ещё не отправлялся». Для минутного требования указать событие начала отсчёта и наблюдаемую точку передачи, например по отметкам журнала; получение на устройстве проверять отдельно, если оно входит в приёмку.",
+      "scenario": "Покупка довела расходы ровно до 50 000 ₸. Вызов сервиса push сделан через 40 секунд, а устройство получило уведомление через 90 секунд.",
+      "requirement_ids": [
+        "B024",
+        "B026",
+        "B031",
+        "B041"
+      ],
+      "evidence": [
+        {
+          "block_id": "B024",
+          "quote": "По умолчанию уведомление выключено.",
+          "start_line": 37,
+          "end_line": 37,
+          "start_col": 98,
+          "end_col": 132,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B026",
+          "quote": "Когда расходы переходят от суммы ниже порога к сумме, равной порогу или выше, клиент получает push.",
+          "start_line": 39,
+          "end_line": 39,
+          "start_col": 12,
+          "end_col": 110,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B026",
+          "quote": "клиент получает push. На карту приходится максимум один такой push за календарный месяц.",
+          "start_line": 39,
+          "end_line": 39,
+          "start_col": 90,
+          "end_col": 177,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B031",
+          "quote": "Сервис передаёт push на отправку в течение минуты после получения события.",
+          "start_line": 46,
+          "end_line": 46,
+          "start_col": 1,
+          "end_col": 74,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B041",
+          "quote": "| Расходы 48 500 ₸, порог 50 000 ₸ | Провести покупку на 1 500 ₸ | Итог 50 000 ₸ и один push |",
+          "start_line": 62,
+          "end_line": 62,
+          "start_col": 1,
+          "end_col": 94,
+          "page_start": 2,
+          "page_end": 2
+        }
+      ],
+      "scopes": [
+        "local",
+        "set"
+      ],
+      "id": "D-011",
+      "related_criteria": [
+        "completeness"
+      ],
+      "additional_recommendations": [
+        "Зафиксировать наблюдаемую точку приёмки: передачу сообщения сервису push либо получение на устройстве. Для получения задать условия доставки и срок проверки.",
+        "Указать, где наблюдается результат, как push связывается с тестовой покупкой и когда завершается подсчёт. Если критерий проверяет получение клиентом, считать уведомления на тестовом устройстве за установленное окно наблюдения; проверку передачи задания оставить отдельной.",
+        "Добавить в исходные условия, что уведомления включены и по этой карте за проверяемый календарный месяц push о достижении порога ещё не отправлялся."
+      ]
+    },
+    {
+      "criterion": "ambiguity",
+      "severity": "major",
+      "title": "Часовой пояс времени совершения покупки не указан явно",
+      "description": "Помета «по Алматы» находится в колонке проведения. Время покупки можно прочитать как местное время Алматы или как отметку в часовом поясе источника. После преобразования во втором случае покупка не обязательно останется в январе, и тест перестанет проверять переход между месяцами.",
+      "recommendation": "Явно указать время Алматы для обеих отметок либо привести обе отметки со смещениями и их локальные значения для расчёта.",
+      "scenario": "Если отметка «31 января в 23:58» задана в UTC, в Алматы покупка уже относится к 1 февраля. Если она задана по Алматы, покупка относится к 31 января.",
+      "requirement_ids": [
+        "B025",
+        "B042"
+      ],
+      "evidence": [
+        {
+          "block_id": "B025",
+          "quote": "Месяц определяется по дате совершения покупки в Алматы.",
+          "start_line": 38,
+          "end_line": 38,
+          "start_col": 12,
+          "end_col": 66,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B042",
+          "quote": "Покупка 31 января в 23:58 на 4 000 ₸ | Провести 1 февраля в 00:03 по Алматы",
+          "start_line": 63,
+          "end_line": 63,
+          "start_col": 3,
+          "end_col": 77,
+          "page_start": 2,
+          "page_end": 2
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-012",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "completeness",
+      "severity": "major",
+      "title": "Не указан состав входных данных для расчёта и проверки порога",
+      "description": "Диаграмма называет событие о проведении покупки, но не указывает, как сервис расходов получает идентификаторы карты и операции, сумму и время совершения покупки. В ответе сервиса настроек назван только порог, хотя для решения об отправке нужен также признак включения. Команды могут по-разному определить состав сообщений и не суметь обработать покупку на границе месяца или при выключенных уведомлениях.",
+      "recommendation": "Указать обязательные поля события и ответа сервиса настроек либо сослаться на их контракты. Для события зафиксировать источник времени совершения покупки, а для настройки — источник признака включения.",
+      "scenario": "Покупка проведена после полуночи, но совершена до неё; на карте сохранён порог, а уведомления выключены.",
+      "requirement_ids": [
+        "B025",
+        "B029",
+        "B033",
+        "B108"
+      ],
+      "evidence": [
+        {
+          "block_id": "B025",
+          "quote": "Месяц определяется по дате совершения покупки в Алматы.",
+          "start_line": 38,
+          "end_line": 38,
+          "start_col": 12,
+          "end_col": 66,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B029",
+          "quote": "Процессинг → сервис расходов: проведена покупка. Сервис расходов → настройки: получить порог карты.",
+          "start_line": 43,
+          "end_line": 43,
+          "start_col": 1,
+          "end_col": 99,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B033",
+          "quote": "идентификатор операции, сумму покупки в тиынах",
+          "start_line": 49,
+          "end_line": 49,
+          "start_col": 37,
+          "end_col": 82,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B108",
+          "quote": "| `enabled` | string | «0» или «1» | Признак включения | `enabled` |",
+          "start_line": 156,
+          "end_line": 156,
+          "start_col": 1,
+          "end_col": 68,
+          "page_start": 3,
+          "page_end": 3
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-013",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "ambiguity",
+      "severity": "major",
+      "title": "Не указано, к какому месяцу относится лимит отправки",
+      "description": "Календарным месяцем можно считать месяц расходов, по которым достигнут порог, или месяц фактической отправки. При позднем проведении покупки эти трактовки меняют то, какое следующее уведомление будет заблокировано.",
+      "recommendation": "Указать, по какому месяцу и часовому поясу применяется лимит, и зафиксировать пример позднего проведения покупки.",
+      "scenario": "Январская покупка проведена в феврале и по согласованному правилу учёта доводит январские расходы до порога. Позднее в феврале порог достигают и февральские расходы. Нужно определить, использовало ли первое уведомление февральский лимит.",
+      "requirement_ids": [
+        "B025",
+        "B026",
+        "B029",
+        "B031"
+      ],
+      "evidence": [
+        {
+          "block_id": "B025",
+          "quote": "Месяц определяется по дате совершения покупки в Алматы. В расходы входят проведённые покупки.",
+          "start_line": 38,
+          "end_line": 38,
+          "start_col": 12,
+          "end_col": 104,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B026",
+          "quote": "На карту приходится максимум один такой push за календарный месяц.",
+          "start_line": 39,
+          "end_line": 39,
+          "start_col": 112,
+          "end_col": 177,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B029",
+          "quote": "Процессинг → сервис расходов: проведена покупка.",
+          "start_line": 43,
+          "end_line": 43,
+          "start_col": 1,
+          "end_col": 48,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B031",
+          "quote": "Сервис передаёт push на отправку в течение минуты после получения события.",
+          "start_line": 46,
+          "end_line": 46,
+          "start_col": 1,
+          "end_col": 74,
+          "page_start": 1,
+          "page_end": 1
+        }
+      ],
+      "scopes": [
+        "local",
+        "set"
+      ],
+      "id": "D-014",
+      "related_criteria": [
+        "completeness"
+      ],
+      "additional_recommendations": [
+        "Задать, пересчитываются ли прошлые месяцы с проверкой порога, какой порог применяется и за какой месяц учитывается отправка. Добавить сценарий позднего проведения с пересечением порога."
+      ]
+    },
+    {
+      "criterion": "completeness",
+      "severity": "major",
+      "title": "Для возврата не задана связь с исходной покупкой",
+      "description": "Чтобы уменьшить расходы правильного месяца, сервису нужно сопоставить возврат с исходной покупкой. В описании обмена есть событие проведённой покупки, но не определено, как сервис получает возврат и идентифицирует исходную операцию. Без этого межмесячный возврат нельзя надёжно отнести к нужному итогу.",
+      "recommendation": "Указать событие, по которому учитывается возврат, его сумму, способ ссылки на исходную покупку и действие, если исходная покупка не найдена.",
+      "scenario": "В феврале поступает частичный возврат по январской покупке. Нужно найти исходную покупку и уменьшить январский итог на сумму возврата, не меняя февральский итог.",
+      "requirement_ids": [
+        "B025",
+        "B029",
+        "B033"
+      ],
+      "evidence": [
+        {
+          "block_id": "B025",
+          "quote": "Возврат уменьшает расходы месяца исходной покупки.",
+          "start_line": 38,
+          "end_line": 38,
+          "start_col": 106,
+          "end_col": 155,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B029",
+          "quote": "Процессинг → сервис расходов: проведена покупка.",
+          "start_line": 43,
+          "end_line": 43,
+          "start_col": 1,
+          "end_col": 48,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B033",
+          "quote": "Хранить идентификатор карты, месяц, идентификатор операции, сумму покупки в тиынах, признак отправки и порог в тенге.",
+          "start_line": 49,
+          "end_line": 49,
+          "start_col": 1,
+          "end_col": 117,
+          "page_start": 1,
+          "page_end": 1
+        }
+      ],
+      "scopes": [
+        "local",
+        "set"
+      ],
+      "id": "D-015",
+      "related_criteria": [],
+      "additional_recommendations": [
+        "Добавить событие возврата и минимальный набор данных: идентификатор возврата, связь с исходной покупкой, сумма и способ определения месяца исходной операции. Задать поведение, если исходная покупка ещё не найдена."
+      ]
+    },
+    {
+      "criterion": "completeness",
+      "severity": "major",
+      "title": "Не описано, как сохраняется результат обработки возврата",
+      "description": "В перечне есть сумма покупки, но не указано, какие данные о возврате или его влиянии на итог должны пережить пересчёт. Состояние, восстановленное только из сохранённых покупок, может снова включить ранее возвращённую сумму.",
+      "recommendation": "Указать, где сохраняется эффект возврата и как он относится к месяцу исходной покупки: например, как денежная корректировка, связанная с исходной операцией, либо как обновлённое состояние месячного учёта. Если эти данные ведутся в другом источнике, сослаться на него.",
+      "scenario": "Февральский возврат уменьшает расходы января. При следующем пересчёте январской суммы уменьшение должно сохраниться.",
+      "requirement_ids": [
+        "B025",
+        "B033"
+      ],
+      "evidence": [
+        {
+          "block_id": "B025",
+          "quote": "Возврат уменьшает расходы месяца исходной покупки.",
+          "start_line": 38,
+          "end_line": 38,
+          "start_col": 106,
+          "end_col": 155,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B033",
+          "quote": "Хранить идентификатор карты, месяц, идентификатор операции, сумму покупки в тиынах, признак отправки и порог в тенге.",
+          "start_line": 49,
+          "end_line": 49,
+          "start_col": 1,
+          "end_col": 117,
+          "page_start": 1,
+          "page_end": 1
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-016",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "ambiguity",
+      "severity": "major",
+      "title": "Не заданы точность сравнения с порогом и формат суммы в push",
+      "description": "Покупки хранятся в тиынах, порог — в целых тенге, а сумма в сообщении не специфицирована. Если один компонент округлит расходы перед сравнением, а другой сравнит без округления, push может уйти раньше порога. Получатель сообщения также не знает, в каких единицах ему приходит сумма.",
+      "recommendation": "Зафиксировать единицу и точность сравнения, например перевод порога в тиыны без округления расходов. Для суммы, передаваемой в push, указать, является ли она накопленным итогом или суммой покупки, и задать единицу и формат.",
+      "scenario": "Расходы достигли 49 999,99 ₸ при пороге 50 000 ₸. При округлении до тенге порог достигнут, при точном сравнении — ещё нет.",
+      "requirement_ids": [
+        "B026",
+        "B029",
+        "B033"
+      ],
+      "evidence": [
+        {
+          "block_id": "B026",
+          "quote": "Когда расходы переходят от суммы ниже порога к сумме, равной порогу или выше, клиент получает push.",
+          "start_line": 39,
+          "end_line": 39,
+          "start_col": 12,
+          "end_col": 110,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B029",
+          "quote": "Сервис расходов → push: передать последние четыре цифры карты и сумму при достижении порога.",
+          "start_line": 43,
+          "end_line": 43,
+          "start_col": 101,
+          "end_col": 192,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B033",
+          "quote": "сумму покупки в тиынах, признак отправки и порог в тенге",
+          "start_line": 49,
+          "end_line": 49,
+          "start_col": 61,
+          "end_col": 116,
+          "page_start": 1,
+          "page_end": 1
+        }
+      ],
+      "scopes": [
+        "local",
+        "set"
+      ],
+      "id": "D-017",
+      "related_criteria": [],
+      "additional_recommendations": [
+        "Назвать передаваемую сумму и зафиксировать её единицу измерения в контракте с сервисом push."
+      ]
+    },
+    {
+      "criterion": "ambiguity",
+      "severity": "major",
+      "title": "Не определено, к каким событиям применяется минутный срок",
+      "description": "В B031 сказано просто «после получения события». Эту фразу можно прочитать либо как безусловное требование, либо как срок только для событий, по которым функциональные правила требуют push. От трактовки зависит, попадут ли покупки без уведомления в проверку срока.",
+      "recommendation": "Указать, что срок применяется только к событиям, по результатам обработки которых по функциональным правилам требуется отправить push, если именно этот охват предусмотрен.",
+      "scenario": "Проведённая покупка увеличивает расходы, но сумма остаётся ниже порога. Тестировщику нужно решить, включать ли её в проверку минутного срока.",
+      "requirement_ids": [
+        "B026",
+        "B031"
+      ],
+      "evidence": [
+        {
+          "block_id": "B026",
+          "quote": "Когда расходы переходят от суммы ниже порога к сумме, равной порогу или выше, клиент получает push.",
+          "start_line": 39,
+          "end_line": 39,
+          "start_col": 12,
+          "end_col": 110,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B031",
+          "quote": "Сервис передаёт push на отправку в течение минуты после получения события.",
+          "start_line": 46,
+          "end_line": 46,
+          "start_col": 1,
+          "end_col": 74,
+          "page_start": 1,
+          "page_end": 1
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-018",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "ambiguity",
+      "severity": "major",
+      "title": "Неясно, считается ли снижение порога пересечением",
+      "description": "Ф-3 описывает переход суммы через порог, а Ф-4 описывает только случай, когда после изменения порога сумма остаётся ниже него. При снижении порога до накопленной суммы или ниже одни исполнители отправят push при сохранении, другие будут считать достижением только изменение расходов.",
+      "recommendation": "Явно определить, запускает ли сохранение порога проверку достижения и что происходит при равенстве или превышении новой границы без новой покупки.",
+      "scenario": "Уведомления включены, push в этом месяце не было, накоплено 50 000 ₸. Клиент снижает порог с 60 000 до 50 000 ₸.",
+      "requirement_ids": [
+        "B026",
+        "B027",
+        "B089"
+      ],
+      "evidence": [
+        {
+          "block_id": "B026",
+          "quote": "Когда расходы переходят от суммы ниже порога к сумме, равной порогу или выше, клиент получает push.",
+          "start_line": 39,
+          "end_line": 39,
+          "start_col": 12,
+          "end_col": 110,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B027",
+          "quote": "При изменении порога накопленная сумма сохраняется. Если она ниже нового порога, следующее достижение вызывает push независимо от истории предыдущей настройки.",
+          "start_line": 40,
+          "end_line": 40,
+          "start_col": 12,
+          "end_col": 170,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B089",
+          "quote": "3. Изменение порога сохраняет накопленные расходы.",
+          "start_line": 125,
+          "end_line": 125,
+          "start_col": 1,
+          "end_col": 50,
+          "page_start": 3,
+          "page_end": 3
+        }
+      ],
+      "scopes": [
+        "local",
+        "set"
+      ],
+      "id": "D-019",
+      "related_criteria": [
+        "completeness"
+      ],
+      "additional_recommendations": [
+        "Указать, отправляется ли push при сохранении порога, равного текущим расходам или меньшего них. Если отправка возможна только при переходе суммы расходов через порог, прямо исключить отправку из-за одного изменения настройки."
+      ]
+    },
+    {
+      "criterion": "ambiguity",
+      "severity": "major",
+      "title": "Не определено, к чему относится признак отправки",
+      "description": "Перечень допускает хранение признака у операции, у карты за месяц или у версии настройки. Эти варианты по-разному отвечают на вопрос, блокирует ли отправка по одной покупке уведомление по другой.",
+      "recommendation": "Привязать признак к явно указанному ключу и определить, когда он сбрасывается или заменяется. Правило должно соответствовать согласованной политике месячного ограничения и изменения порога.",
+      "scenario": "После первого push клиент меняет порог, а другая покупка пересекает новый порог в том же месяце. Сервису нужно знать, какую запись о предыдущей отправке читать.",
+      "requirement_ids": [
+        "B026",
+        "B027",
+        "B033"
+      ],
+      "evidence": [
+        {
+          "block_id": "B026",
+          "quote": "На карту приходится максимум один такой push за календарный месяц.",
+          "start_line": 39,
+          "end_line": 39,
+          "start_col": 112,
+          "end_col": 177,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B027",
+          "quote": "Если она ниже нового порога, следующее достижение вызывает push независимо от истории предыдущей настройки.",
+          "start_line": 40,
+          "end_line": 40,
+          "start_col": 64,
+          "end_col": 170,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B033",
+          "quote": "признак отправки и порог в тенге",
+          "start_line": 49,
+          "end_line": 49,
+          "start_col": 85,
+          "end_col": 116,
+          "page_start": 1,
+          "page_end": 1
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-020",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "ambiguity",
+      "severity": "major",
+      "title": "Не определено, что означает «сохраняет исходный итог»",
+      "description": "Неясно, означает ли фраза сохранение текущего состояния без повторного учёта, возврат ранее вычисленного результата или оба требования. Также не сказано, входит ли в сохраняемый результат отсутствие нового задания на push. Тест на поздний дубль может ожидать разные значения и побочные эффекты.",
+      "recommendation": "Зафиксировать ключ распознавания дубля и наблюдаемые последствия повторной доставки: меняются ли текущие расходы и состояние отправки, создаётся ли задание на push и какой результат возвращается, если интерфейс предусматривает ответ.",
+      "scenario": "Первая покупка довела расходы до 50 000 ₸ и вызвала push. Следующая подняла итог до 52 000 ₸. Затем повторно доставлена первая покупка: нужно различить исходный результат её обработки и текущий месячный итог.",
+      "requirement_ids": [
+        "B026",
+        "B029",
+        "B033",
+        "B035"
+      ],
+      "evidence": [
+        {
+          "block_id": "B026",
+          "quote": "На карту приходится максимум один такой push за календарный месяц.",
+          "start_line": 39,
+          "end_line": 39,
+          "start_col": 112,
+          "end_col": 177,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B029",
+          "quote": "Сервис расходов → push: передать последние четыре цифры карты и сумму при достижении порога.",
+          "start_line": 43,
+          "end_line": 43,
+          "start_col": 101,
+          "end_col": 192,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B033",
+          "quote": "идентификатор операции, сумму покупки в тиынах, признак отправки и порог в тенге",
+          "start_line": 49,
+          "end_line": 49,
+          "start_col": 37,
+          "end_col": 116,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B035",
+          "quote": "Повторная доставка одного события процессинга сохраняет исходный итог.",
+          "start_line": 52,
+          "end_line": 52,
+          "start_col": 111,
+          "end_col": 180,
+          "page_start": 1,
+          "page_end": 1
+        }
+      ],
+      "scopes": [
+        "local",
+        "set"
+      ],
+      "id": "D-021",
+      "related_criteria": [
+        "completeness"
+      ],
+      "additional_recommendations": [
+        "Определить идентификатор повторно доставляемого события и наблюдаемый исход для суммы и push при повторе. Указать, когда считается использованным право на месячную отправку и что происходит при повторе после неясного результата передачи."
+      ]
+    },
+    {
+      "criterion": "verifiability",
+      "severity": "major",
+      "title": "Не заданы наблюдаемые точки начала и конца замера",
+      "description": "Численный предел указан, но не определено, считать ли получением поступление сообщения на вход или начало его обработки, а передачей — попытку вызова или приём задания сервисом push. При задержке в очереди или на вызове один прогон может пройти или не пройти в зависимости от выбранных отметок.",
+      "recommendation": "Назвать компонент и две наблюдаемые отметки, по которым измеряются 60 секунд. Например, если ограничение охватывает ожидание в очереди и успешную передачу, измерять от регистрации входного события до подтверждённого приёма задания сервисом push.",
+      "scenario": "Событие зарегистрировано в 12:00:00, обработка началась в 12:00:45, а сервис push принял задание в 12:01:05. Замер от регистрации даёт 65 секунд, от начала обработки — 20.",
+      "requirement_ids": [
+        "B029",
+        "B031"
+      ],
+      "evidence": [
+        {
+          "block_id": "B029",
+          "quote": "Сервис расходов → push: передать последние четыре цифры карты и сумму при достижении порога.",
+          "start_line": 43,
+          "end_line": 43,
+          "start_col": 101,
+          "end_col": 192,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B031",
+          "quote": "в течение минуты после получения события",
+          "start_line": 46,
+          "end_line": 46,
+          "start_col": 34,
+          "end_col": 73,
+          "page_start": 1,
+          "page_end": 1
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-022",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "contradiction",
+      "severity": "major",
+      "title": "GET используется для изменения настройки",
+      "description": "B069 задаёт GET, а алгоритм требует по этому запросу заменить настройку. По семантике HTTP клиент вправе выполнять GET как безопасный запрос, не запрашивающий изменения состояния. Здесь такой вызов изменит порог, поэтому клиент и тесты не могут полагаться на стандартное поведение GET.",
+      "recommendation": "Задать для сохранения метод записи, например PUT для полной замены настройки, и согласовать с ним пример запроса. GET оставить для чтения без изменения настройки.",
+      "scenario": "Валидный GET с порогом 50 000 ₸ поступает для карты с порогом 40 000 ₸. Семантика GET не предполагает изменения настройки, но алгоритм предписывает заменить 40 000 ₸ на 50 000 ₸.",
+      "requirement_ids": [
+        "B069",
+        "B084",
+        "B088"
+      ],
+      "evidence": [
+        {
+          "block_id": "B069",
+          "quote": "| **REST type** | GET |",
+          "start_line": 103,
+          "end_line": 103,
+          "start_col": 1,
+          "end_col": 23,
+          "page_start": 2,
+          "page_end": 2
+        },
+        {
+          "block_id": "B074",
+          "quote": "curl -G \"$BASE/alerts/saveLimit\" -H \"Authorization: Bearer $TOKEN\" --data 'cardId=demo-42&amount=50000&enabled=1'",
+          "start_line": 108,
+          "end_line": 108,
+          "start_col": 15,
+          "end_col": 127,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B084",
+          "quote": "4. Заменить настройку и вернуть результат сохранения.",
+          "start_line": 119,
+          "end_line": 119,
+          "start_col": 1,
+          "end_col": 53,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B088",
+          "quote": "Повторное сохранение заменяет действующую настройку.",
+          "start_line": 124,
+          "end_line": 124,
+          "start_col": 4,
+          "end_col": 55,
+          "page_start": 3,
+          "page_end": 3
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-023",
+      "related_criteria": [],
+      "additional_recommendations": [
+        "Назначить сохранению метод изменения состояния, например PUT, и согласовать с ним описание и пример запроса. GET оставить для чтения без изменения настройки."
+      ]
+    },
+    {
+      "criterion": "completeness",
+      "severity": "major",
+      "title": "Не определено, какая сессия считается действующей",
+      "description": "Спецификация задаёт Bearer и требует проверить сессию, но не задаёт правила её действительности и не ссылается на общий контракт авторизации. Проверка принадлежности карты описана отдельно и этого пробела не закрывает. Реализация и тесты могут разойтись в том, должен ли корректно оформленный токен завершённой сессии давать доступ к сохранению.",
+      "recommendation": "Сослаться на действующий контракт проверки Bearer-сессии либо определить здесь минимальные условия её действительности. Явно отнести недействительную сессию к ответу 401 до проверки принадлежности карты.",
+      "scenario": "Клиент передаёт токен завершённой сессии и корректные параметры для своей карты. Нужно однозначно определить, отклоняется ли запрос до изменения настройки.",
+      "requirement_ids": [
+        "B070",
+        "B081",
+        "B117"
+      ],
+      "evidence": [
+        {
+          "block_id": "B070",
+          "quote": "Bearer, сессия владельца карты",
+          "start_line": 104,
+          "end_line": 104,
+          "start_col": 23,
+          "end_col": 52,
+          "page_start": 2,
+          "page_end": 2
+        },
+        {
+          "block_id": "B081",
+          "quote": "1. Проверить пользовательскую сессию.",
+          "start_line": 116,
+          "end_line": 116,
+          "start_col": 1,
+          "end_col": 37,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B117",
+          "quote": "**401.** Ответ в случае, если запрос выполнен без необходимой авторизации.",
+          "start_line": 173,
+          "end_line": 173,
+          "start_col": 1,
+          "end_col": 74,
+          "page_start": 4,
+          "page_end": 4
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-024",
+      "related_criteria": [],
+      "additional_recommendations": [
+        "Сослаться на единые правила проверки Bearer-сессии и явно указать, что при недействительной сессии метод возвращает 401 и не переходит к проверке карты."
+      ]
+    },
+    {
+      "criterion": "completeness",
+      "severity": "major",
+      "title": "Для Prod не указан адрес или статус доступности",
+      "description": "B072 перечисляет Dev и Prod, но в строке адресов для Prod стоит прочерк без пояснения. Команда интеграции не может настроить вызов в Prod или определить, следует ли исключить этот контур из приёмки.",
+      "recommendation": "Если метод доступен в Prod, указать путь и источник базового адреса. Если контур не входит в объём поставки, явно отметить это вместо прочерка.",
+      "scenario": "При подготовке приёмки в Prod тестировщик должен либо вызвать метод по согласованному адресу, либо исключить проверку как не входящую в объём поставки.",
+      "requirement_ids": [
+        "B072",
+        "B073"
+      ],
+      "evidence": [
+        {
+          "block_id": "B072",
+          "quote": "| **URL type** | Dev / Prod |",
+          "start_line": 106,
+          "end_line": 106,
+          "start_col": 1,
+          "end_col": 29,
+          "page_start": 2,
+          "page_end": 2
+        },
+        {
+          "block_id": "B073",
+          "quote": "Dev: `/alerts/saveLimit` . Prod: —",
+          "start_line": 107,
+          "end_line": 107,
+          "start_col": 21,
+          "end_col": 54,
+          "page_start": 2,
+          "page_end": 2
+        }
+      ],
+      "scopes": [
+        "local",
+        "set"
+      ],
+      "id": "D-025",
+      "related_criteria": [],
+      "additional_recommendations": [
+        "Указать базовый адрес и путь для Prod либо сослаться на конфигурацию, из которой они берутся. Если Prod не входит в объём поставки, явно исключить его из списка окружений.",
+        "Указать маршрут и способ получения базового адреса Prod либо явно отметить, что Prod не входит в объём учебного кейса."
+      ]
+    },
+    {
+      "criterion": "ambiguity",
+      "severity": "major",
+      "title": "Неясно, обязателен ли Content-Type для запроса без тела",
+      "description": "Строка с `application/json` может означать обязательный заголовок запроса или описание формата тела, которое метод не использует. Пример передаёт параметры в URL и не задаёт этот заголовок. Если сервер потребует его, клиент, написанный по примеру, может не сохранить настройки.",
+      "recommendation": "Явно указать, что при запросе без тела заголовок `Content-Type` не требуется, либо сделать его обязательность явной и добавить заголовок в пример.",
+      "scenario": "Приложение отправляет корректный запрос без тела и без `Content-Type`, как в примере.",
+      "requirement_ids": [
+        "B101",
+        "B102"
+      ],
+      "evidence": [
+        {
+          "block_id": "B074",
+          "quote": "curl -G \"$BASE/alerts/saveLimit\" -H \"Authorization: Bearer $TOKEN\" --data 'cardId=demo-42&amount=50000&enabled=1'",
+          "start_line": 108,
+          "end_line": 108,
+          "start_col": 15,
+          "end_col": 127,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B101",
+          "quote": "**Content-Type:** `application/json`",
+          "start_line": 146,
+          "end_line": 146,
+          "start_col": 3,
+          "end_col": 38,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B102",
+          "quote": "Тело не используется.",
+          "start_line": 147,
+          "end_line": 147,
+          "start_col": 3,
+          "end_col": 23,
+          "page_start": 3,
+          "page_end": 3
+        }
+      ],
+      "scopes": [
+        "local",
+        "set"
+      ],
+      "id": "D-026",
+      "related_criteria": [],
+      "additional_recommendations": [
+        "Для контракта без тела явно указать, что заголовок не требуется. Если новый контракт записи использует JSON, описать заголовок и тело именно у него и обновить пример."
+      ]
+    },
+    {
+      "criterion": "ambiguity",
+      "severity": "major",
+      "title": "Не разграничены отсутствие действующей сессии и недостаток прав",
+      "description": "Фраза «без необходимой авторизации» может означать как отсутствие действующей сессии, так и отсутствие прав при действующей сессии. Для запрета доступа отдельно указан HTTP 403, а для чужой карты установлен HTTP 404. Если не разграничить условия, клиент может получить HTTP 401 вместо отказа в доступе и предложить повторный вход там, где он не поможет.",
+      "recommendation": "Привязать HTTP 401 к непрохождению проверки сессии, включая отсутствующий, недействительный и просроченный Bearer-токен. Определить HTTP 403 для применимых отказов в доступе после успешной проверки сессии и сохранить HTTP 404 для чужой или отсутствующей карты.",
+      "scenario": "Клиент передаёт действующий Bearer-токен и идентификатор чужой карты. По специальному правилу ожидается HTTP 404, но широкое прочтение B117 позволяет считать отсутствие прав на карту основанием для HTTP 401.",
+      "requirement_ids": [
+        "B081",
+        "B082",
+        "B117",
+        "B118",
+        "B125"
+      ],
+      "evidence": [
+        {
+          "block_id": "B081",
+          "quote": "Проверить пользовательскую сессию.",
+          "start_line": 116,
+          "end_line": 116,
+          "start_col": 4,
+          "end_col": 37,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B082",
+          "quote": "Проверить принадлежность карты клиенту.",
+          "start_line": 117,
+          "end_line": 117,
+          "start_col": 4,
+          "end_col": 42,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B117",
+          "quote": "**401.** Ответ в случае, если запрос выполнен без необходимой авторизации.",
+          "start_line": 173,
+          "end_line": 173,
+          "start_col": 1,
+          "end_col": 74,
+          "page_start": 4,
+          "page_end": 4
+        },
+        {
+          "block_id": "B118",
+          "quote": "**403.** Ответ в случае, если на указанный ресурс доступ запрещен.",
+          "start_line": 174,
+          "end_line": 174,
+          "start_col": 1,
+          "end_col": 66,
+          "page_start": 4,
+          "page_end": 4
+        },
+        {
+          "block_id": "B125",
+          "quote": "Для чужой карты возвращается 404, как и для отсутствующей карты.",
+          "start_line": 188,
+          "end_line": 188,
+          "start_col": 1,
+          "end_col": 64,
+          "page_start": 4,
+          "page_end": 4
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-027",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "contradiction",
+      "severity": "major",
+      "title": "Общее правило 403 охватывает случай, для которого задан 404",
+      "description": "B118 предписывает 403 при запрете доступа без исключений. Карта другого клиента не проходит проверку принадлежности, но для неё B125 предписывает 404. Если реализовать общий отказ до обработки специального случая, API вернёт 403, а приёмочный тест по B125 будет ожидать 404.",
+      "recommendation": "Явно исключить чужую карту из правила 403 и сослаться на B125. Если других случаев для 403 нет, удалить правило B118.",
+      "scenario": "Клиент с действующей сессией отправляет корректный запрос с идентификатором существующей карты другого клиента. По общему правилу отказ в доступе даёт 403, а по правилу для чужой карты тот же запрос даёт 404.",
+      "requirement_ids": [
+        "B082",
+        "B118",
+        "B125"
+      ],
+      "evidence": [
+        {
+          "block_id": "B082",
+          "quote": "2. Проверить принадлежность карты клиенту.",
+          "start_line": 117,
+          "end_line": 117,
+          "start_col": 1,
+          "end_col": 42,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B118",
+          "quote": "**403.** Ответ в случае, если на указанный ресурс доступ запрещен.",
+          "start_line": 174,
+          "end_line": 174,
+          "start_col": 1,
+          "end_col": 66,
+          "page_start": 4,
+          "page_end": 4
+        },
+        {
+          "block_id": "B124",
+          "quote": "#### 403. Unsuccessful — Forbidden",
+          "start_line": 187,
+          "end_line": 187,
+          "start_col": 1,
+          "end_col": 34,
+          "page_start": 4,
+          "page_end": 4
+        },
+        {
+          "block_id": "B125",
+          "quote": "Для чужой карты возвращается 404, как и для отсутствующей карты.",
+          "start_line": 188,
+          "end_line": 188,
+          "start_col": 1,
+          "end_col": 64,
+          "page_start": 4,
+          "page_end": 4
+        },
+        {
+          "block_id": "B127",
+          "quote": "{\"message\":\"Карта не найдена\"}",
+          "start_line": 191,
+          "end_line": 191,
+          "start_col": 1,
+          "end_col": 30,
+          "page_start": 4,
+          "page_end": 4
+        }
+      ],
+      "scopes": [
+        "local",
+        "set"
+      ],
+      "id": "D-028",
+      "related_criteria": [
+        "ambiguity"
+      ],
+      "additional_recommendations": [
+        "Перенести правило о чужой и отсутствующей карте в раздел 404. Для 403 назвать отдельное условие, если оно предусмотрено, или исключить этот статус из контракта метода.",
+        "Вынести правило и пример в раздел 404. Для 403 указать самостоятельное условие либо исключить статус из контракта метода. Привязать исходы к проверкам сессии и принадлежности карты."
+      ]
+    },
+    {
+      "criterion": "completeness",
+      "severity": "major",
+      "title": "Не определены обязательные поля ошибок и смысл возврата прежнего состояния",
+      "description": "Схема перечисляет `result`, `enabled` и `message`, но не задаёт состав тела для каждого исхода. Примеры неуспешных HTTP-ответов содержат только `message`. При отклонении суммы неясно, означает ли возврат прежнего состояния сохранение его в хранилище или также включение прежних значений в ответ. Не определён исход проверки переключателя. Клиент не может надёжно разобрать отказ и восстановить отображаемую настройку.",
+      "recommendation": "Для каждого заявленного кода задать обязательные и отсутствующие поля и привести совпадающий пример. Для отсутствующих и недопустимых параметров явно определить статус, тело и отсутствие записи; отдельно указать, возвращаются ли прежние `amount` и `enabled`.",
+      "scenario": "При сохранённом пороге 50 000 ₸ клиент отправляет недопустимую сумму либо `enabled=2` и должен понять, какое состояние показать после отказа.",
+      "requirement_ids": [
+        "B083",
+        "B085",
+        "B106",
+        "B107",
+        "B108",
+        "B109"
+      ],
+      "evidence": [
+        {
+          "block_id": "B083",
+          "quote": "3. Проверить сумму и переключатель.",
+          "start_line": 118,
+          "end_line": 118,
+          "start_col": 1,
+          "end_col": 35,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B085",
+          "quote": "5. При отклонении суммы вернуть прежнее состояние и результат ERROR.",
+          "start_line": 120,
+          "end_line": 120,
+          "start_col": 1,
+          "end_col": 68,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B106",
+          "quote": "| `result` | string | OK / ERROR | Исход сохранения | — |",
+          "start_line": 154,
+          "end_line": 154,
+          "start_col": 1,
+          "end_col": 57,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B107",
+          "quote": "| `amount` | string | При успехе | Порог в тенге | `limit_kzt` |",
+          "start_line": 155,
+          "end_line": 155,
+          "start_col": 1,
+          "end_col": 64,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B108",
+          "quote": "| `enabled` | string | «0» или «1» | Признак включения | `enabled` |",
+          "start_line": 156,
+          "end_line": 156,
+          "start_col": 1,
+          "end_col": 68,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B109",
+          "quote": "| `message` | string | При ошибке | Описание ошибки | — |",
+          "start_line": 157,
+          "end_line": 157,
+          "start_col": 1,
+          "end_col": 57,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B116",
+          "quote": "{\"result\":\"ERROR\",\"message\":\"Проверьте сумму\"}",
+          "start_line": 170,
+          "end_line": 170,
+          "start_col": 1,
+          "end_col": 46,
+          "page_start": 4,
+          "page_end": 4
+        },
+        {
+          "block_id": "B121",
+          "quote": "{\"message\":\"Некорректный запрос\"}",
+          "start_line": 179,
+          "end_line": 179,
+          "start_col": 1,
+          "end_col": 33,
+          "page_start": 4,
+          "page_end": 4
+        },
+        {
+          "block_id": "B123",
+          "quote": "{\"message\":\"Требуется вход\"}",
+          "start_line": 184,
+          "end_line": 184,
+          "start_col": 1,
+          "end_col": 28,
+          "page_start": 4,
+          "page_end": 4
+        },
+        {
+          "block_id": "B129",
+          "quote": "{\"message\":\"Ошибка сервиса\"}",
+          "start_line": 196,
+          "end_line": 196,
+          "start_col": 1,
+          "end_col": 28,
+          "page_start": 4,
+          "page_end": 4
+        }
+      ],
+      "scopes": [
+        "local",
+        "set"
+      ],
+      "id": "D-029",
+      "related_criteria": [
+        "ambiguity"
+      ],
+      "additional_recommendations": [
+        "Раздельно описать изменение состояния и тело ответа: при отклонении суммы не изменять сохранённую настройку и явно указать, передаются ли прежние `amount` и `enabled` в ответе с ошибкой.",
+        "Указать, присутствует ли `amount` при отклонении суммы. Если присутствует, определить его как прежний сохранённый порог; если отсутствует, заменить «вернуть прежнее состояние» на «не изменять сохранённую настройку».",
+        "Для каждого описанного типа ответа указать, обязательно ли поле `result` и какое значение оно принимает. Если внутри одного HTTP-статуса схемы различаются, перечислить условия для каждой схемы и согласовать примеры."
+      ]
+    },
+    {
+      "criterion": "contradiction",
+      "severity": "major",
+      "title": "Отклонённая сумма описана и как HTTP 200, и как HTTP 400",
+      "description": "B111 и B104 относят HTTP 200 к успеху, но в разделе примеров для 200 приведён ответ `ERROR` с указанием проверить сумму. B112 требует HTTP 400 для неверных параметров, а B085 прямо описывает отклонение суммы как `ERROR`. В результате сервер и клиент могут по-разному выбрать или обработать HTTP-статус одного и того же отказа.",
+      "recommendation": "Закрепить HTTP 400 для отклонённой суммы, согласовать тело этой ошибки с B085 и перенести либо исправить пример B116. Примеры HTTP 200 оставить только для успешного сохранения.",
+      "scenario": "Владелец карты с действующей сессией передаёт `amount=999` и `enabled=1`. По B112 неверный порог требует HTTP 400, а B116 вместе с заголовком B113 показывает HTTP 200 с `ERROR` для ошибки суммы.",
+      "requirement_ids": [
+        "B083",
+        "B085",
+        "B098",
+        "B104",
+        "B111",
+        "B112"
+      ],
+      "evidence": [
+        {
+          "block_id": "B083",
+          "quote": "Проверить сумму и переключатель.",
+          "start_line": 118,
+          "end_line": 118,
+          "start_col": 4,
+          "end_col": 35,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B085",
+          "quote": "При отклонении суммы вернуть прежнее состояние и результат ERROR.",
+          "start_line": 120,
+          "end_line": 120,
+          "start_col": 4,
+          "end_col": 68,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B098",
+          "quote": "| `amount` | integer | 32 bit | Да | 1 000–1 000 000 | Порог в тенге | `limit_kzt` |",
+          "start_line": 142,
+          "end_line": 142,
+          "start_col": 1,
+          "end_col": 84,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B104",
+          "quote": "Если результат 200 или 201 — успешный.",
+          "start_line": 150,
+          "end_line": 150,
+          "start_col": 1,
+          "end_col": 38,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B111",
+          "quote": "**200.** Ответ в случае успешного выполнения метода.",
+          "start_line": 161,
+          "end_line": 161,
+          "start_col": 1,
+          "end_col": 52,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B112",
+          "quote": "**400.** Ответ в случае, если параметры запроса заполнены неверно.",
+          "start_line": 162,
+          "end_line": 162,
+          "start_col": 1,
+          "end_col": 66,
+          "page_start": 4,
+          "page_end": 4
+        },
+        {
+          "block_id": "B113",
+          "quote": "#### 200. Successful — Created",
+          "start_line": 164,
+          "end_line": 164,
+          "start_col": 1,
+          "end_col": 30,
+          "page_start": 4,
+          "page_end": 4
+        },
+        {
+          "block_id": "B116",
+          "quote": "{\"result\":\"ERROR\",\"message\":\"Проверьте сумму\"}",
+          "start_line": 170,
+          "end_line": 170,
+          "start_col": 1,
+          "end_col": 46,
+          "page_start": 4,
+          "page_end": 4
+        }
+      ],
+      "scopes": [
+        "local",
+        "set"
+      ],
+      "id": "D-030",
+      "related_criteria": [],
+      "additional_recommendations": [
+        "Зафиксировать один HTTP-статус для отклонённой суммы. Если сохраняется общее правило о неверных параметрах, перенести пример ERROR в раздел 400 и согласовать его поля с правилом о прежнем состоянии.",
+        "Зафиксировать для отклонённой суммы HTTP 400 и тело с `result: ERROR`; перенести пример в раздел 400 и привести его в соответствие со схемой ответа.",
+        "Закрепить 400 для отклонённой суммы, перенести пример `ERROR` в раздел 400 и оставить в разделе 200 только успешный ответ.",
+        "Зафиксировать одну пару HTTP-статуса и результата для отказа по сумме. Если сохраняется правило о 400, перенести пример с `ERROR` в раздел 400 и согласовать его со схемой ошибок."
+      ]
+    },
+    {
+      "criterion": "ambiguity",
+      "severity": "major",
+      "title": "Не определён HTTP-статус успешной замены",
+      "description": "Общее правило признаёт успешными 200 и 201, а раздел статусов описывает 200. Неясно, должен ли метод при замене существующей настройки всегда возвращать 200 или клиент обязан принять и 201. Это приводит к разным ожиданиям в контрактных тестах.",
+      "recommendation": "Явно закрепить HTTP 200 для успешной замены. Если 201 предусмотрен для отдельного случая создания, описать это условие отдельно; иначе убрать 201 из контракта метода.",
+      "scenario": "Клиент меняет порог у карты с существующей настройкой; сохранение завершилось успешно, и тест проверяет точный HTTP-статус.",
+      "requirement_ids": [
+        "B084",
+        "B088",
+        "B104",
+        "B111"
+      ],
+      "evidence": [
+        {
+          "block_id": "B084",
+          "quote": "Заменить настройку и вернуть результат сохранения.",
+          "start_line": 119,
+          "end_line": 119,
+          "start_col": 4,
+          "end_col": 53,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B088",
+          "quote": "Повторное сохранение заменяет действующую настройку.",
+          "start_line": 124,
+          "end_line": 124,
+          "start_col": 4,
+          "end_col": 55,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B104",
+          "quote": "Если результат 200 или 201 — успешный.",
+          "start_line": 150,
+          "end_line": 150,
+          "start_col": 1,
+          "end_col": 38,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B111",
+          "quote": "**200.** Ответ в случае успешного выполнения метода.",
+          "start_line": 161,
+          "end_line": 161,
+          "start_col": 1,
+          "end_col": 52,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B113",
+          "quote": "#### 200. Successful — Created",
+          "start_line": 164,
+          "end_line": 164,
+          "start_col": 1,
+          "end_col": 30,
+          "page_start": 4,
+          "page_end": 4
+        }
+      ],
+      "scopes": [
+        "local",
+        "set"
+      ],
+      "id": "D-031",
+      "related_criteria": [
+        "completeness"
+      ],
+      "additional_recommendations": [
+        "Либо оставить 200 для любого успешного сохранения, либо явно указать условия возврата 200 и 201.",
+        "Либо закрепить HTTP 200 для всех успешных сохранений и убрать HTTP 201 из сводного правила, либо явно распределить HTTP 200 и HTTP 201 между условиями успешного сохранения.",
+        "Либо оставить 200 и исправить заголовок, либо отдельно определить условие и пример 201, а также код для замены существующей настройки."
+      ]
+    },
+    {
+      "criterion": "completeness",
+      "severity": "major",
+      "title": "Не задано поведение при непустом теле",
+      "description": "Правило исключает тело как источник параметров, но не определяет, нужно ли игнорировать непустое тело или отклонять запрос. В зависимости от реализации запрос с корректными query-параметрами либо изменит настройку, либо оставит её прежней.",
+      "recommendation": "Зафиксировать одну политику: игнорировать непустое тело и обрабатывать только query-параметры либо отклонять такой запрос до записи с указанным HTTP-статусом.",
+      "scenario": "Запрос содержит корректные query-параметры и непустое тело JSON с другим значением `amount`.",
+      "requirement_ids": [
+        "B084",
+        "B102"
+      ],
+      "evidence": [
+        {
+          "block_id": "B084",
+          "quote": "Заменить настройку и вернуть результат сохранения.",
+          "start_line": 119,
+          "end_line": 119,
+          "start_col": 4,
+          "end_col": 53,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B095",
+          "quote": "#### Query-параметры",
+          "start_line": 137,
+          "end_line": 137,
+          "start_col": 1,
+          "end_col": 20,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B102",
+          "quote": "Тело не используется.",
+          "start_line": 147,
+          "end_line": 147,
+          "start_col": 3,
+          "end_col": 23,
+          "page_start": 3,
+          "page_end": 3
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-032",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "completeness",
+      "severity": "major",
+      "title": "Не задано состояние настройки после ответа 500",
+      "description": "Метод сначала заменяет настройку, затем возвращает результат. Для внутренней ошибки указан только HTTP-статус. Если сбой происходит после записи, но до формирования ответа, тестировщик не знает, какую настройку должно показать последующее чтение: прежнюю или новую.",
+      "recommendation": "Зафиксировать, может ли новая настройка оставаться сохранённой при ответе 500. Если результат зависит от момента сбоя, указать ожидаемое состояние до и после фиксации записи и как клиенту его проверить.",
+      "scenario": "Новый порог записан в хранилище, но при формировании ответа возникает внутренняя ошибка. Клиент получает 500 и повторно читает настройку.",
+      "requirement_ids": [
+        "B084",
+        "B119"
+      ],
+      "evidence": [
+        {
+          "block_id": "B084",
+          "quote": "Заменить настройку и вернуть результат сохранения.",
+          "start_line": 119,
+          "end_line": 119,
+          "start_col": 4,
+          "end_col": 53,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B119",
+          "quote": "**500.** Ответ в случае, если произошла внутренняя ошибка сервера.",
+          "start_line": 175,
+          "end_line": 175,
+          "start_col": 1,
+          "end_col": 66,
+          "page_start": 4,
+          "page_end": 4
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-033",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "ambiguity",
+      "severity": "major",
+      "title": "Неясно, считается ли повтор query-параметра ошибкой",
+      "description": "HTTP 400 предписан для неверно заполненных параметров, но для скалярного `enabled` не определено, как обрабатывать несколько значений одного ключа. Разные реализации могут отклонить запрос, взять первое значение или взять последнее, что приведёт к разному состоянию уведомлений.",
+      "recommendation": "Явно определить правило для повторяющихся скалярных query-параметров. Например, при повторе вернуть HTTP 400 и не менять настройку.",
+      "scenario": "Авторизованный владелец передаёт допустимый порог и одновременно `enabled=0` и `enabled=1`. Каждое значение допустимо по отдельности, но ожидаемый ответ на их сочетание не определён.",
+      "requirement_ids": [
+        "B099",
+        "B112"
+      ],
+      "evidence": [
+        {
+          "block_id": "B099",
+          "quote": "| `enabled` | integer | 1 знак | Да | 0 или 1 | Признак включения | `enabled` |",
+          "start_line": 143,
+          "end_line": 143,
+          "start_col": 1,
+          "end_col": 79,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B112",
+          "quote": "**400.** Ответ в случае, если параметры запроса заполнены неверно.",
+          "start_line": 162,
+          "end_line": 162,
+          "start_col": 1,
+          "end_col": 66,
+          "page_start": 4,
+          "page_end": 4
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-034",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "completeness",
+      "severity": "major",
+      "title": "Не определена обязательность `enabled` в ответе",
+      "description": "Таблица задаёт тип и значения `enabled`, но не указывает, когда поле обязательно или отсутствует. В успешном примере поле есть, в примерах ошибок его нет. По этим примерам разработчик клиента не может определить, допустим ли успешный ответ без `enabled`.",
+      "recommendation": "Указать обязательность `enabled` для успешного ответа и явно определить, присутствует ли поле в ответах об ошибке.",
+      "scenario": "Сервер сообщает об успешном сохранении, но не включает `enabled`. Тестировщик не может однозначно решить, соответствует ли ответ контракту.",
+      "requirement_ids": [
+        "B108"
+      ],
+      "evidence": [
+        {
+          "block_id": "B108",
+          "quote": "| `enabled` | string | «0» или «1» | Признак включения | `enabled` |",
+          "start_line": 156,
+          "end_line": 156,
+          "start_col": 1,
+          "end_col": 68,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B114",
+          "quote": "{\"result\":\"OK\",\"amount\":\"50000\",\"enabled\":\"1\"}",
+          "start_line": 166,
+          "end_line": 166,
+          "start_col": 1,
+          "end_col": 46,
+          "page_start": 4,
+          "page_end": 4
+        },
+        {
+          "block_id": "B121",
+          "quote": "{\"message\":\"Некорректный запрос\"}",
+          "start_line": 179,
+          "end_line": 179,
+          "start_col": 1,
+          "end_col": 33,
+          "page_start": 4,
+          "page_end": 4
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-035",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "atomicity",
+      "severity": "minor",
+      "title": "Навигация, состав экрана и показ ошибки объединены",
+      "description": "Маршрут к экрану, наличие элементов и размещение сообщения можно изменить и проверить независимо. Общая запись затрудняет фиксацию частичного выполнения.",
+      "recommendation": "Выделить отдельные требования к маршруту, составу экрана и показу сообщения под полем.",
+      "scenario": null,
+      "requirement_ids": [
+        "B019"
+      ],
+      "evidence": [
+        {
+          "block_id": "B019",
+          "quote": "Карты → Расходы → Уведомления. На экране видны переключатель, поле «Порог, ₸», сумма за месяц и кнопка «Сохранить». При ошибке ввода сообщение появляется под полем.",
+          "start_line": 29,
+          "end_line": 29,
+          "start_col": 1,
+          "end_col": 164,
+          "page_start": 1,
+          "page_end": 1
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-036",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "ambiguity",
+      "severity": "minor",
+      "title": "Не определён момент показа ошибки ввода",
+      "description": "Положение сообщения задано, но его можно показывать во время ввода, при выходе из поля или только после попытки сохранения. От выбора зависит ожидаемое поведение в UI-тесте.",
+      "recommendation": "Указать событие, при котором приложение показывает сообщение о недопустимом пороге.",
+      "scenario": "Пользователь ввёл 999 ₸, но ещё не нажал «Сохранить». Неясно, должно ли сообщение уже отображаться.",
+      "requirement_ids": [
+        "B019",
+        "B024"
+      ],
+      "evidence": [
+        {
+          "block_id": "B019",
+          "quote": "При ошибке ввода сообщение появляется под полем.",
+          "start_line": 29,
+          "end_line": 29,
+          "start_col": 117,
+          "end_col": 164,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B024",
+          "quote": "целый порог от 1 000 до 1 000 000 ₸ включительно",
+          "start_line": 37,
+          "end_line": 37,
+          "start_col": 48,
+          "end_col": 95,
+          "page_start": 1,
+          "page_end": 1
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-037",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "atomicity",
+      "severity": "minor",
+      "title": "Ограничение на порог объединено с начальным состоянием уведомления",
+      "description": "Допустимость значения порога и состояние переключателя по умолчанию проверяются независимо: одно при вводе или сохранении, другое до первой настройки.",
+      "recommendation": "Оставить в Ф-1 право на настройку и допустимый диапазон порога, а начальное состояние уведомления вынести в отдельное требование.",
+      "scenario": null,
+      "requirement_ids": [
+        "B024"
+      ],
+      "evidence": [
+        {
+          "block_id": "B024",
+          "quote": "Держатель активной карты KZT задаёт целый порог от 1 000 до 1 000 000 ₸ включительно. По умолчанию уведомление выключено.",
+          "start_line": 37,
+          "end_line": 37,
+          "start_col": 12,
+          "end_col": 132,
+          "page_start": 1,
+          "page_end": 1
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-038",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "duplication",
+      "severity": "minor",
+      "title": "Границы порога заданы в двух нормативных местах без явного приоритета",
+      "description": "Ф-1 и таблица `amount` независимо задают один диапазон. Сейчас значения согласованы, но при изменении границы бизнес-правило и серверная валидация могут разойтись: например, UI примет порог, который API ещё отклоняет.",
+      "recommendation": "Сделать Ф-1 источником бизнес-ограничения, а в строке `amount` явно сослаться на него, сохранив в API тип, единицу и имя поля.",
+      "scenario": null,
+      "requirement_ids": [
+        "B024",
+        "B098"
+      ],
+      "evidence": [
+        {
+          "block_id": "B024",
+          "quote": "целый порог от 1 000 до 1 000 000 ₸ включительно",
+          "start_line": 37,
+          "end_line": 37,
+          "start_col": 48,
+          "end_col": 95,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B098",
+          "quote": "| `amount` | integer | 32 bit | Да | 1 000–1 000 000 | Порог в тенге | `limit_kzt` |",
+          "start_line": 142,
+          "end_line": 142,
+          "start_col": 1,
+          "end_col": 84,
+          "page_start": 3,
+          "page_end": 3
+        }
+      ],
+      "scopes": [
+        "set"
+      ],
+      "id": "D-039",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "atomicity",
+      "severity": "minor",
+      "title": "Начисление расходов и корректировка возвратом объединены",
+      "description": "Учёт проведённой покупки и корректировка ранее учтённых расходов запускаются разными событиями. Их можно реализовать и принять независимо.",
+      "recommendation": "Оставить правила месяца и состава покупок в требовании к начислению, а корректировку по возврату оформить отдельной записью со ссылкой на месяц исходной покупки.",
+      "scenario": null,
+      "requirement_ids": [
+        "B025"
+      ],
+      "evidence": [
+        {
+          "block_id": "B025",
+          "quote": "В расходы входят проведённые покупки. Возврат уменьшает расходы месяца исходной покупки. Переводы и снятие наличных исключаются.",
+          "start_line": 38,
+          "end_line": 38,
+          "start_col": 68,
+          "end_col": 195,
+          "page_start": 1,
+          "page_end": 1
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-040",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "atomicity",
+      "severity": "minor",
+      "title": "В одном требовании объединены данные операций, настроек и уведомлений",
+      "description": "Покупка создаёт данные операции, изменение порога меняет настройку, а отправка push меняет состояние уведомления. Это самостоятельные обязанности с разными событиями обновления; одна запись затрудняет их раздельную приёмку.",
+      "recommendation": "Разнести обязанности по хранению данных операций, настройки порога и состояния отправки по отдельным требованиям. Это не обязывает хранить данные в разных физических таблицах.",
+      "scenario": null,
+      "requirement_ids": [
+        "B027",
+        "B033"
+      ],
+      "evidence": [
+        {
+          "block_id": "B027",
+          "quote": "При изменении порога накопленная сумма сохраняется.",
+          "start_line": 40,
+          "end_line": 40,
+          "start_col": 12,
+          "end_col": 62,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B033",
+          "quote": "идентификатор операции, сумму покупки в тиынах, признак отправки и порог в тенге",
+          "start_line": 49,
+          "end_line": 49,
+          "start_col": 37,
+          "end_col": 116,
+          "page_start": 1,
+          "page_end": 1
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-041",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "atomicity",
+      "severity": "minor",
+      "title": "Сохранение расходов и правила следующей отправки объединены",
+      "description": "Неизменность суммы проверяется сразу после сохранения порога, а отправка — после следующего достижения. Ошибка одного поведения не означает ошибку другого.",
+      "recommendation": "Разделить требование на сохранение накопленной суммы и применение правил отправки после изменения порога.",
+      "scenario": null,
+      "requirement_ids": [
+        "B027"
+      ],
+      "evidence": [
+        {
+          "block_id": "B027",
+          "quote": "При изменении порога накопленная сумма сохраняется. Если она ниже нового порога, следующее достижение вызывает push независимо от истории предыдущей настройки.",
+          "start_line": 40,
+          "end_line": 40,
+          "start_col": 12,
+          "end_col": 170,
+          "page_start": 1,
+          "page_end": 1
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-042",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "atomicity",
+      "severity": "minor",
+      "title": "В одной записи объединены три интеграционных взаимодействия",
+      "description": "Приём события, чтение настроек и передача задания на отправку относятся к разным интерфейсам. По одному идентификатору трудно отмечать, какое из взаимодействий уже реализовано и проверено.",
+      "recommendation": "Сохранить последовательность как обзор сценария, но дать каждому из трёх взаимодействий отдельную запись требования.",
+      "scenario": null,
+      "requirement_ids": [
+        "B029"
+      ],
+      "evidence": [
+        {
+          "block_id": "B029",
+          "quote": "Процессинг → сервис расходов: проведена покупка.",
+          "start_line": 43,
+          "end_line": 43,
+          "start_col": 1,
+          "end_col": 48,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B029",
+          "quote": "Сервис расходов → настройки: получить порог карты.",
+          "start_line": 43,
+          "end_line": 43,
+          "start_col": 50,
+          "end_col": 99,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B029",
+          "quote": "Сервис расходов → push: передать последние четыре цифры карты и сумму при достижении порога.",
+          "start_line": 43,
+          "end_line": 43,
+          "start_col": 101,
+          "end_col": 192,
+          "page_start": 1,
+          "page_end": 1
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-043",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "atomicity",
+      "severity": "minor",
+      "title": "Клиентский REST API и обработка дублей объединены в одной записи",
+      "description": "Работа приложения с настройками и повторная доставка событий процессинга относятся к разным интерфейсам и проверяются независимо. Общая запись не позволяет отметить выполнение одного требования отдельно от другого.",
+      "recommendation": "Вынести чтение и сохранение настроек и идемпотентность обработки событий в отдельные записи; чтение и сохранение оформить отдельными операциями контракта.",
+      "scenario": null,
+      "requirement_ids": [
+        "B035"
+      ],
+      "evidence": [
+        {
+          "block_id": "B035",
+          "quote": "Приложение читает и сохраняет настройки через дочерний документ «Уведомление о расходах по карте — REST API».",
+          "start_line": 52,
+          "end_line": 52,
+          "start_col": 1,
+          "end_col": 109,
+          "page_start": 1,
+          "page_end": 1
+        },
+        {
+          "block_id": "B035",
+          "quote": "Повторная доставка одного события процессинга сохраняет исходный итог.",
+          "start_line": 52,
+          "end_line": 52,
+          "start_col": 111,
+          "end_col": 180,
+          "page_start": 1,
+          "page_end": 1
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-044",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "completeness",
+      "severity": "minor",
+      "title": "Раздел тестирования оставлен на заполнение",
+      "description": "Раздел не определяет, кто и по каким проверкам подтверждает готовность спецификации.",
+      "recommendation": "Согласовать объём тестирования и сослаться на проверяемые критерии приёмки.",
+      "scenario": null,
+      "requirement_ids": [],
+      "evidence": [
+        {
+          "block_id": "B038",
+          "quote": "заполняются тестировщиками",
+          "start_line": 56,
+          "end_line": 56,
+          "start_col": 1,
+          "end_col": 26,
+          "page_start": 2,
+          "page_end": 2
+        }
+      ],
+      "scopes": [
+        "set"
+      ],
+      "id": "D-045",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "completeness",
+      "severity": "minor",
+      "title": "Не зафиксировано состояние ревью и согласования документа",
+      "description": "Не заполнены версия и дата, отметки чек-листа и блок согласующих. Команда не может определить, какую редакцию проверяли и была ли она согласована. Это пробел в состоянии документа, а не в поведении продукта.",
+      "recommendation": "Указать версию, дату и статус документа. Для завершённого ревью заполнить результаты проверок и сведения о согласовании; для черновика явно отметить, что эти шаги ещё не выполнены.",
+      "scenario": null,
+      "requirement_ids": [],
+      "evidence": [
+        {
+          "block_id": "B045",
+          "quote": "Документ (версия/дата) в источнике не заполнен. Пункты чек-листа приведены как в шаблоне, отметки не проставлены.",
+          "start_line": 67,
+          "end_line": 67,
+          "start_col": 1,
+          "end_col": 113,
+          "page_start": 2,
+          "page_end": 2
+        },
+        {
+          "block_id": "B062",
+          "quote": "| Подразделение | ФИО ответственного | Подпись |",
+          "start_line": 88,
+          "end_line": 88,
+          "start_col": 1,
+          "end_col": 48,
+          "page_start": 2,
+          "page_end": 2
+        },
+        {
+          "block_id": "B063",
+          "quote": "| | | |",
+          "start_line": 90,
+          "end_line": 90,
+          "start_col": 1,
+          "end_col": 7,
+          "page_start": 2,
+          "page_end": 2
+        }
+      ],
+      "scopes": [
+        "set"
+      ],
+      "id": "D-046",
+      "related_criteria": [],
+      "additional_recommendations": [
+        "Записать версию и дату рассмотренной редакции."
+      ]
+    },
+    {
+      "criterion": "completeness",
+      "severity": "minor",
+      "title": "Не зафиксирован результат проверки по чек-листу",
+      "description": "Шаблон не показывает, какие проверки выполнены и какие решения ещё открыты.",
+      "recommendation": "Зафиксировать результаты проверок и объяснить пункты, которые неприменимы.",
+      "scenario": null,
+      "requirement_ids": [],
+      "evidence": [
+        {
+          "block_id": "B045",
+          "quote": "Пункты чек-листа приведены как в шаблоне, отметки не проставлены.",
+          "start_line": 67,
+          "end_line": 67,
+          "start_col": 49,
+          "end_col": 113,
+          "page_start": 2,
+          "page_end": 2
+        }
+      ],
+      "scopes": [
+        "set"
+      ],
+      "id": "D-047",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "completeness",
+      "severity": "minor",
+      "title": "Таблица согласования пуста",
+      "description": "В таблице нет участников и результата согласования спецификации.",
+      "recommendation": "Указать ответственных и зафиксировать статус согласования.",
+      "scenario": null,
+      "requirement_ids": [],
+      "evidence": [
+        {
+          "block_id": "B063",
+          "quote": "| | | |",
+          "start_line": 90,
+          "end_line": 90,
+          "start_col": 1,
+          "end_col": 7,
+          "page_start": 2,
+          "page_end": 2
+        }
+      ],
+      "scopes": [
+        "set"
+      ],
+      "id": "D-048",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "atomicity",
+      "severity": "minor",
+      "title": "Две независимые проверки объединены в одном шаге",
+      "description": "Порог и переключатель имеют отдельные ограничения и могут быть невалидны независимо друг от друга. В одной записи сложнее отдельно зафиксировать и проверить отказ по каждому параметру.",
+      "recommendation": "Выделить проверку `amount` и проверку `enabled` в два пункта со ссылками на соответствующие строки параметров.",
+      "scenario": "Сумма допустима, а значение enabled равно 2: проверка суммы проходит, проверка переключателя должна отклонить запрос.",
+      "requirement_ids": [
+        "B083",
+        "B098",
+        "B099"
+      ],
+      "evidence": [
+        {
+          "block_id": "B083",
+          "quote": "Проверить сумму и переключатель.",
+          "start_line": 118,
+          "end_line": 118,
+          "start_col": 4,
+          "end_col": 35,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B098",
+          "quote": "| `amount` | integer | 32 bit | Да | 1 000–1 000 000 |",
+          "start_line": 142,
+          "end_line": 142,
+          "start_col": 1,
+          "end_col": 54,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B099",
+          "quote": "| `enabled` | integer | 1 знак | Да | 0 или 1 |",
+          "start_line": 143,
+          "end_line": 143,
+          "start_col": 1,
+          "end_col": 47,
+          "page_start": 3,
+          "page_end": 3
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-049",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "ambiguity",
+      "severity": "minor",
+      "title": "Не определена текстовая запись целого порога",
+      "description": "Для query-параметра `amount` задан числовой тип, но не сказано, проверяется ли запись до преобразования. Один разработчик примет `1e3` как целое значение 1 000, другой отклонит его; тестировщик не сможет выбрать ожидаемый ответ.",
+      "recommendation": "Задать допустимую форму `amount` в URL, например последовательность десятичных цифр без знака и экспоненты, с отдельной проверкой числового диапазона.",
+      "scenario": "Клиент передаёт `amount=1e3` при остальных корректных параметрах.",
+      "requirement_ids": [
+        "B098"
+      ],
+      "evidence": [
+        {
+          "block_id": "B095",
+          "quote": "#### Query-параметры",
+          "start_line": 137,
+          "end_line": 137,
+          "start_col": 1,
+          "end_col": 20,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B098",
+          "quote": "| `amount` | integer | 32 bit | Да | 1 000–1 000 000 | Порог в тенге | `limit_kzt` |",
+          "start_line": 142,
+          "end_line": 142,
+          "start_col": 1,
+          "end_col": 84,
+          "page_start": 3,
+          "page_end": 3
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-050",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "ambiguity",
+      "severity": "minor",
+      "title": "Не указана единица длины идентификатора карты",
+      "description": "Для строкового `cardId` указан диапазон 1–64 без единицы измерения. Без ограничения алфавита один валидатор может считать символы, а другой — байты, поэтому они могут по-разному классифицировать одно значение.",
+      "recommendation": "Указать единицу измерения длины для декодированного значения `cardId` либо сослаться на формат идентификатора карты, если он уже однозначно задаёт алфавит и ограничение длины.",
+      "scenario": "Многобайтовое значение укладывается в 64 символа, но превышает 64 байта. Валидаторы, считающие длину по-разному, по-разному решат, допустим ли параметр.",
+      "requirement_ids": [
+        "B097"
+      ],
+      "evidence": [
+        {
+          "block_id": "B096",
+          "quote": "| Parameter | Format | Size | Mandatory | Logic | Description | DB field |",
+          "start_line": 139,
+          "end_line": 139,
+          "start_col": 1,
+          "end_col": 74,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B097",
+          "quote": "| `cardId` | string | 1–64 | Да | Карта клиента | Идентификатор карты | `card_id` |",
+          "start_line": 141,
+          "end_line": 141,
+          "start_col": 1,
+          "end_col": 83,
+          "page_start": 3,
+          "page_end": 3
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-051",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "ambiguity",
+      "severity": "minor",
+      "title": "«И далее» не определяет множество кодов ошибок",
+      "description": "Фразу можно прочитать как ссылку только на коды, перечисленные в разделе статусов, или как общее правило для всех ответов 4xx и 5xx. От этого зависит, должен ли клиент обрабатывать неперечисленный код как обычную ошибку метода.",
+      "recommendation": "Заменить «и далее» точным диапазоном для классификации на стороне клиента или явным закрытым перечнем кодов метода.",
+      "scenario": "Клиент получает ответ 422, которого нет в разделе статусов.",
+      "requirement_ids": [
+        "B104"
+      ],
+      "evidence": [
+        {
+          "block_id": "B104",
+          "quote": "Если результат 400, 401 и далее — неуспешный.",
+          "start_line": 150,
+          "end_line": 150,
+          "start_col": 40,
+          "end_col": 84,
+          "page_start": 3,
+          "page_end": 3
+        },
+        {
+          "block_id": "B110",
+          "quote": "### Статусы",
+          "start_line": 159,
+          "end_line": 159,
+          "start_col": 1,
+          "end_col": 11,
+          "page_start": 3,
+          "page_end": 3
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-052",
+      "related_criteria": [],
+      "additional_recommendations": []
+    },
+    {
+      "criterion": "contradiction",
+      "severity": "minor",
+      "title": "Правило для 404 помещено в подраздел 403",
+      "description": "Заголовок подраздела относит ответ к 403, тогда как B125 и пример указывают 404. При переносе подразделов в описание API или в таблицу тестов ответ для отсутствующей карты может быть ошибочно зарегистрирован как 403.",
+      "recommendation": "Перенести B125 и пример ответа в отдельный подраздел 404. Подраздел 403 оставить только для правил, которые действительно возвращают 403.",
+      "scenario": "Клиент с действующей сессией передаёт идентификатор отсутствующей карты. При чтении кода из заголовка подраздела ожидается 403, а по тексту B125 и примеру — 404.",
+      "requirement_ids": [
+        "B125"
+      ],
+      "evidence": [
+        {
+          "block_id": "B124",
+          "quote": "#### 403. Unsuccessful — Forbidden",
+          "start_line": 187,
+          "end_line": 187,
+          "start_col": 1,
+          "end_col": 34,
+          "page_start": 4,
+          "page_end": 4
+        },
+        {
+          "block_id": "B125",
+          "quote": "Для чужой карты возвращается 404, как и для отсутствующей карты.",
+          "start_line": 188,
+          "end_line": 188,
+          "start_col": 1,
+          "end_col": 64,
+          "page_start": 4,
+          "page_end": 4
+        },
+        {
+          "block_id": "B126",
+          "quote": "**404**",
+          "start_line": 189,
+          "end_line": 189,
+          "start_col": 1,
+          "end_col": 7,
+          "page_start": 4,
+          "page_end": 4
+        }
+      ],
+      "scopes": [
+        "local"
+      ],
+      "id": "D-053",
+      "related_criteria": [],
+      "additional_recommendations": []
+    }
+  ],
+  "readiness": {
+    "development": "not_ready",
+    "testing": "not_ready"
+  },
+  "coverage_complete": true,
+  "discarded_proposals": 0,
+  "merged_proposals": 38,
+  "failed_stages": 0,
+  "warnings": [],
+  "context_blocks": [
+    {
+      "id": "B038",
+      "section": "Уведомление о расходах по карте / Часть A. Новый функционал / Требования к тестированию / Тестирование требований",
+      "kind": "governance",
+      "start_line": 56,
+      "end_line": 56,
+      "text": "заполняются тестировщиками",
+      "source_id": null
+    },
+    {
+      "id": "B045",
+      "section": "Уведомление о расходах по карте / Часть A. Новый функционал / Ревью требований",
+      "kind": "governance",
+      "start_line": 67,
+      "end_line": 67,
+      "text": "Документ (версия/дата) в источнике не заполнен. Пункты чек-листа приведены как в шаблоне, отметки не проставлены.",
+      "source_id": null
+    },
+    {
+      "id": "B062",
+      "section": "Уведомление о расходах по карте / Часть A. Новый функционал / Блок согласующих",
+      "kind": "governance",
+      "start_line": 88,
+      "end_line": 89,
+      "text": "| Подразделение | ФИО ответственного | Подпись |\n| :--- | :--- | :--- |",
+      "source_id": null
+    },
+    {
+      "id": "B063",
+      "section": "Уведомление о расходах по карте / Часть A. Новый функционал / Блок согласующих",
+      "kind": "governance",
+      "start_line": 90,
+      "end_line": 90,
+      "text": "| | | |",
+      "source_id": null
+    },
+    {
+      "id": "B074",
+      "section": "Уведомление о расходах по карте / Часть B. REST API / Общие параметры",
+      "kind": "example",
+      "start_line": 108,
+      "end_line": 108,
+      "text": "| **CURL** | `curl -G \"$BASE/alerts/saveLimit\" -H \"Authorization: Bearer $TOKEN\" --data 'cardId=demo-42&amount=50000&enabled=1'` |",
+      "source_id": null
+    },
+    {
+      "id": "B095",
+      "section": "Уведомление о расходах по карте / Часть B. REST API / Параметры запроса / Query-параметры",
+      "kind": "context",
+      "start_line": 137,
+      "end_line": 137,
+      "text": "#### Query-параметры",
+      "source_id": null
+    },
+    {
+      "id": "B096",
+      "section": "Уведомление о расходах по карте / Часть B. REST API / Параметры запроса / Query-параметры",
+      "kind": "context",
+      "start_line": 139,
+      "end_line": 140,
+      "text": "| Parameter | Format | Size | Mandatory | Logic | Description | DB field |\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- |",
+      "source_id": null
+    },
+    {
+      "id": "B110",
+      "section": "Уведомление о расходах по карте / Часть B. REST API / Статусы",
+      "kind": "context",
+      "start_line": 159,
+      "end_line": 159,
+      "text": "### Статусы",
+      "source_id": null
+    },
+    {
+      "id": "B113",
+      "section": "Уведомление о расходах по карте / Часть B. REST API / Статусы / 200. Successful — Created",
+      "kind": "context",
+      "start_line": 164,
+      "end_line": 164,
+      "text": "#### 200. Successful — Created",
+      "source_id": null
+    },
+    {
+      "id": "B114",
+      "section": "Уведомление о расходах по карте / Часть B. REST API / Статусы / 200. Successful — Created",
+      "kind": "example",
+      "start_line": 165,
+      "end_line": 167,
+      "text": "```json\n{\"result\":\"OK\",\"amount\":\"50000\",\"enabled\":\"1\"}\n```",
+      "source_id": null
+    },
+    {
+      "id": "B116",
+      "section": "Уведомление о расходах по карте / Часть B. REST API / Статусы / 200. Successful — Created",
+      "kind": "example",
+      "start_line": 169,
+      "end_line": 171,
+      "text": "```json\n{\"result\":\"ERROR\",\"message\":\"Проверьте сумму\"}\n```",
+      "source_id": null
+    },
+    {
+      "id": "B121",
+      "section": "Уведомление о расходах по карте / Часть B. REST API / Статусы / 400. Unsuccessful — Bad request",
+      "kind": "example",
+      "start_line": 178,
+      "end_line": 180,
+      "text": "```json\n{\"message\":\"Некорректный запрос\"}\n```",
+      "source_id": null
+    },
+    {
+      "id": "B123",
+      "section": "Уведомление о расходах по карте / Часть B. REST API / Статусы / 401. Unsuccessful — Unauthorized",
+      "kind": "example",
+      "start_line": 183,
+      "end_line": 185,
+      "text": "```json\n{\"message\":\"Требуется вход\"}\n```",
+      "source_id": null
+    },
+    {
+      "id": "B124",
+      "section": "Уведомление о расходах по карте / Часть B. REST API / Статусы / 403. Unsuccessful — Forbidden",
+      "kind": "context",
+      "start_line": 187,
+      "end_line": 187,
+      "text": "#### 403. Unsuccessful — Forbidden",
+      "source_id": null
+    },
+    {
+      "id": "B126",
+      "section": "Уведомление о расходах по карте / Часть B. REST API / Статусы / 403. Unsuccessful — Forbidden",
+      "kind": "example",
+      "start_line": 189,
+      "end_line": 189,
+      "text": "**404**",
+      "source_id": null
+    },
+    {
+      "id": "B127",
+      "section": "Уведомление о расходах по карте / Часть B. REST API / Статусы / 403. Unsuccessful — Forbidden",
+      "kind": "example",
+      "start_line": 190,
+      "end_line": 192,
+      "text": "```json\n{\"message\":\"Карта не найдена\"}\n```",
+      "source_id": null
+    },
+    {
+      "id": "B129",
+      "section": "Уведомление о расходах по карте / Часть B. REST API / Статусы / 500. Unsuccessful — Internal server error",
+      "kind": "example",
+      "start_line": 195,
+      "end_line": 197,
+      "text": "```json\n{\"message\":\"Ошибка сервиса\"}\n```",
+      "source_id": null
+    }
+  ],
+  "clarifications": [
+    [
+      "B026/contradiction",
+      "Должен ли клиент получить второй push за тот же календарный месяц, если по карте уже был отправлен push, затем порог повысили выше текущих расходов и следующая покупка достигла нового порога: действует месячный лимит Ф-3 (B026) или правило повторного достижения Ф-4 (B027)?"
+    ],
+    [
+      "B068/verifiability",
+      "Какое поведение должен подтвердить тест запроса из B074: чтение текущего порога без изменения настройки или сохранение переданных `amount` и `enabled` с изменением настройки?"
+    ],
+    [
+      "B072/verifiability",
+      "В каких из указанных контуров — Dev и Prod — нужно подтвердить работоспособность метода при приёмке и по какому наблюдаемому признаку тестировщик сможет убедиться, что запрос обработан в нужном контуре?"
+    ],
+    [
+      "B073/verifiability",
+      "Какие полные URL следует использовать для контрольного запроса в Dev и Prod, учитывая, что в B073 для Dev указан только `/alerts/saveLimit`, а для Prod стоит прочерк?"
+    ],
+    [
+      "B075/completeness",
+      "Где будет зафиксирован полный контракт метода — параметры запроса, схемы ответов и соответствие ошибок HTTP-статусам: в Swagger или непосредственно в части B?"
+    ],
+    [
+      "B075/ambiguity",
+      "Что означает прочерк в поле `Swagger` блока B075: Swagger не требуется, спецификация ещё не подготовлена или она существует, но ссылка не указана?"
+    ],
+    [
+      "B075/verifiability",
+      "Если Swagger обязателен, где тестировщик сможет открыть его утверждённую версию для проверки соответствия запросов и ответов реализованного метода контракту?"
+    ],
+    [
+      "B081/verifiability",
+      "Какие HTTP-статус и тело ответа должен ожидать тестировщик при отсутствующем, недействительном и просроченном Bearer-токене и в каких из этих случаев применяется `401` из B117?"
+    ],
+    [
+      "B084/verifiability",
+      "Какой HTTP-статус и какие значения полей должен вернуть метод при замене существующей настройки валидными `amount` и `enabled`, и каким запросом чтения тестировщик должен подтвердить, что новые значения сохранились?"
+    ],
+    [
+      "B112/contradiction",
+      "Какой HTTP-статус и какое тело ответа считать правильными для авторизованного запроса владельца карты с `amount=999`: `400` за неверный параметр по B112 или `200` с `result: ERROR`, как в примере B116 под заголовком для `200`?"
+    ],
+    [
+      "B118/verifiability",
+      "Какой конкретный сценарий с действительной сессией должен дать `403` и какое тело ответа нужно проверять, если для чужой и отсутствующей карты B125 предписывает `404`?"
+    ]
+  ]
+}

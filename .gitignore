@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+tests/fixtures/requirements.pdf
+reports/*
+!reports/submission.md
+!reports/submission.json
+.reqvalidator-*.tmp
+/input/
