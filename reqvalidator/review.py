@@ -296,9 +296,16 @@ class ReviewEngine:
         return verified, discarded
 
     def _semantic_pairs(
-        self, findings: list[Finding], warnings: list[str],
+        self, findings: list[Finding], warnings: list[str], *, consolidated: bool = False,
     ) -> tuple[tuple[int, int], ...]:
         candidates = merge_candidates(findings)
+        if consolidated:
+            blocks = [{anchor.block_id for anchor in f.evidence} for f in findings]
+            candidates = tuple(
+                (i, j) for i, j in candidates
+                if len(blocks[i - 1] & blocks[j - 1]) >= 2
+                or findings[i - 1].severity == findings[j - 1].severity == "critical"
+            )
         if not candidates:
             return ()
         merged: list[tuple[int, int]] = []
@@ -319,7 +326,8 @@ class ReviewEngine:
                 ],
             })
             try:
-                answer = self._call(prompts.MERGE, query, MergeResponse, lambda _: True)
+                system = prompts.MERGE_CONSOLIDATED if consolidated else prompts.MERGE
+                answer = self._call(system, query, MergeResponse, lambda _: True)
             except (ReviewError, ReviewLimitError):
                 warnings.append("Семантическое слияние выполнено частично. Точные дубли удалены кодом.")
                 break
@@ -329,6 +337,17 @@ class ReviewEngine:
                 if key in allowed:
                     merged.append((key[0], key[1]))
         return tuple(merged)
+
+    def consolidate(self, findings: list[Finding], warnings: list[str]) -> tuple[Finding, ...]:
+        semantic = self._semantic_pairs(findings, warnings)
+        unique = deduplicate(findings, semantic)
+        return self.consolidate_shared_findings(unique, warnings)
+
+    def consolidate_shared_findings(
+        self, findings: tuple[Finding, ...], warnings: list[str],
+    ) -> tuple[Finding, ...]:
+        pairs = self._semantic_pairs(list(findings), warnings, consolidated=True)
+        return deduplicate(findings, pairs) if pairs else findings
 
     def _clarify(self, source: str, targets: dict[str, str]) -> dict[str, str | None]:
         if not targets:
@@ -416,8 +435,7 @@ class ReviewEngine:
             warnings.append("Проверка набора пропущена после ошибки обращения к модели.")
 
         findings.extend(set_findings)
-        semantic = self._semantic_pairs(findings, warnings) if not call_blocked else ()
-        unique = deduplicate(findings, semantic)
+        unique = deduplicate(findings) if call_blocked else self.consolidate(findings, warnings)
         complete = not document.warnings and failed_stages == 0
         targets = {
             f"{row.block.id}/{check.criterion}": (
