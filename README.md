@@ -16,7 +16,17 @@ Copy-Item .env.example .env
 
 ## Ключ и модель
 
-Для прогона жюри получите собственный Gemini API key в Google AI Studio и заполните в `.env` поле `REQVALIDATOR_API_KEY`. В примере уже заданы `REQVALIDATOR_PROVIDER=compatible`, модель `gemini-4-hydrogen`, адрес `https://generativelanguage.googleapis.com/v1beta/openai/` и структурированный формат `json_schema`. Наличие бесплатной квоты и её размер зависят от проекта Google. При HTTP 429 проверьте доступную квоту и при необходимости настройте интервал между запросами. [Получить Gemini-ключ](https://aistudio.google.com/apikey) · [Gemini API и бесплатный уровень](https://ai.google.dev/gemini-api/docs/pricing) · [Лимиты Gemini](https://ai.google.dev/gemini-api/docs/rate-limits)
+Получите свой ключ Gemini в Google AI Studio и заполните в `.env` поле `REQVALIDATOR_API_KEY`. В `.env.example` уже заданы проверенные параметры для Google API.
+
+```dotenv
+REQVALIDATOR_PROVIDER=compatible
+REQVALIDATOR_MODEL=gemini-2.5-flash
+REQVALIDATOR_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+REQVALIDATOR_COMPATIBLE_FORMAT=json_schema
+REQVALIDATOR_MIN_REQUEST_INTERVAL=5
+```
+
+На бесплатном Gemini ориентируйтесь примерно на 15–20 минут для PDF этого кейса. Наш прогон занял около 16 минут. Время и квоты зависят от проекта Google и нагрузки сервиса. При HTTP 429 проверьте квоту. Если достигнут лимит частоты, увеличьте `REQVALIDATOR_MIN_REQUEST_INTERVAL`, а если исчерпана дневная квота, повторите после её обновления. При HTTP 503 попробуйте позже. [Получить Gemini-ключ](https://aistudio.google.com/apikey) · [Квоты Gemini](https://ai.google.dev/gemini-api/docs/rate-limits)
 
 Для прямого OpenAI поменяйте профиль в `.env` следующим образом. Вставьте ключ, созданный в собственном проекте OpenAI, и при необходимости замените пример модели на доступную.
 
@@ -27,6 +37,7 @@ REQVALIDATOR_BASE_URL=
 REQVALIDATOR_API_KEY=
 OPENAI_API_KEY=
 REQVALIDATOR_REASONING_EFFORT=medium
+REQVALIDATOR_MIN_REQUEST_INTERVAL=0
 ```
 
 Для OpenAI Responses оставьте `REQVALIDATOR_SEED` пустым. Для reasoning-моделей оставьте `REQVALIDATOR_TEMPERATURE` пустым, если документация выбранной модели её не поддерживает. Для совместимого сервиса можно переключить `REQVALIDATOR_COMPATIBLE_FORMAT` на `json_object` или `prompt`, если endpoint не принимает строгую схему. Парсинг и валидация схемы на стороне агента остаются во всех режимах. Seed и temperature передаются только по явной настройке и при поддержке сервиса. Переменные среды имеют приоритет над `.env`. [Ключ OpenAI](https://platform.openai.com/api-keys) · [Рекомендации для актуальной модели](https://developers.openai.com/api/docs/guides/latest-model)
@@ -39,7 +50,7 @@ REQVALIDATOR_REASONING_EFFORT=medium
 python -m reqvalidator input/requirements.pdf reports/review.md --json-output reports/review.json
 ```
 
-Опубликованный в репозитории прогон выполнен с OpenAI Responses и моделью gpt-6.2-sol. [Отчёт Markdown](reports/submission.md) · [Данные JSON](reports/submission.json)
+Отчёт для сдачи получен через OpenAI Responses с моделью `gpt-6.2-sol`. Проверочный прогон Gemini на том же PDF выявил все четыре контрольных дефекта, но дал больше замечаний и повторов. [Отчёт Markdown](reports/submission.md) · [Данные JSON](reports/submission.json)
 
 Даже при одинаковом входном файле и настройках ответы модели могут различаться. При повторном прогоне могут измениться число и формулировки замечаний. Агент в каждом прогоне сверяет цитаты с исходным документом.
 
