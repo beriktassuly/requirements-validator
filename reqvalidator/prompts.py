@@ -1,5 +1,7 @@
 """Original review instructions shared by the model passes."""
 
+import json
+
 from .model import LOCAL_CRITERIA, RELATIONS, SET_CRITERIA
 
 
@@ -89,10 +91,24 @@ MERGE = """Определи, какие из предложенных пар н�
 
 def local_input(ids_json: str, source: str) -> str:
     checklist = "\n".join(f"{key} — {CRITERIA[key]}" for key in LOCAL_CRITERIA)
-    return f"Целевые ID: {ids_json}\n\nРубрика:\n{checklist}\n\nДокумент JSON:\n{source}"
+    return (
+        f"Целевые ID: {ids_json}\n"
+        f"Для КАЖДОГО целевого ID массив checks должен содержать ровно следующие "
+        f"значения criterion: {json.dumps(LOCAL_CRITERIA)}. Включай также pass, "
+        "uncertain и not_applicable. Не добавляй другие критерии.\n\n"
+        f"Рубрика:\n{checklist}\n\nДокумент JSON:\n{source}"
+    )
 
 
 def set_input(source: str) -> str:
     checklist = "\n".join(f"{key} — {CRITERIA[key]}" for key in SET_CRITERIA)
     links = "\n".join(f"{key} — {RELATION_LABELS[key]}" for key in RELATIONS)
-    return f"Рубрика:\n{checklist}\n\nОбязательные связки:\n{links}\n\nДокумент JSON:\n{source}"
+    return (
+        f"Массив checks должен содержать ровно следующие значения criterion: "
+        f"{json.dumps(SET_CRITERIA)}.\n"
+        f"Массив links должен содержать ровно следующие значения relation: "
+        f"{json.dumps(RELATIONS)}.\n"
+        "Включай все записи, даже если их статус pass, uncertain или not_applicable. "
+        "Не добавляй другие критерии или связки.\n\n"
+        f"Рубрика:\n{checklist}\n\nОбязательные связки:\n{links}\n\nДокумент JSON:\n{source}"
+    )

@@ -8,3 +8,4 @@ __pycache__/
 tests/fixtures/requirements.pdf
 reports/*
 .reqvalidator-*.tmp
+/input/

@@ -254,7 +254,10 @@ class ReviewEngine:
     def _call(
         self, system: str, message: str, schema: type[T], validate: Callable[[T], bool],
     ) -> T:
-        retry_note = "\n\nПовтор: верни каждый указанный ID и каждый критерий ровно один раз."
+        retry_note = (
+            "\n\nПовтор: предыдущий ответ нарушил покрытие. Верни ровно указанные во входе "
+            "ID, критерии и связки. Не пропускай записи, у которых нет замечаний."
+        )
         if len(system) + len(message) + len(retry_note) > self.max_input_chars:
             raise ReviewLimitError(
                 "Полный контекст превышает REQVALIDATOR_MAX_INPUT_CHARS. "
