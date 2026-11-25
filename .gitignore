@@ -7,5 +7,7 @@ __pycache__/
 *.py[cod]
 tests/fixtures/requirements.pdf
 reports/*
+!reports/submission.md
+!reports/submission.json
 .reqvalidator-*.tmp
 /input/

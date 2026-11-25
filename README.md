@@ -39,6 +39,10 @@ REQVALIDATOR_REASONING_EFFORT=medium
 python -m reqvalidator input/requirements.pdf reports/review.md --json-output reports/review.json
 ```
 
+Опубликованный в репозитории прогон выполнен с OpenAI Responses и моделью gpt-6.2-sol. [Отчёт Markdown](reports/submission.md) · [Данные JSON](reports/submission.json)
+
+Даже при одинаковом входном файле и настройках ответы модели могут различаться. При повторном прогоне могут измениться число и формулировки замечаний. Агент в каждом прогоне сверяет цитаты с исходным документом.
+
 Markdown организатора уже есть в проекте. Оценщику передаётся тот же файл, который проверил агент: он проверяет хеш и координаты цитат, в том числе страницы PDF.
 
 ```powershell
