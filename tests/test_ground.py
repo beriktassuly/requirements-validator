@@ -72,3 +72,25 @@ def test_pair_of_conflicts_with_only_one_common_side_stays_separate() -> None:
     )
 
     assert len(deduplicate((first, second), semantic_pairs=((1, 2),))) == 2
+
+
+def test_merge_keeps_distinct_context_and_removes_contained_citations() -> None:
+    left = _anchor("B001", 1, "GET изменяет настройки.")
+    right = _anchor("B002", 2, "Сохранить новый порог.")
+    fragment = replace(left, quote="GET", end_col=3)
+    extra = _anchor("B003", 3, "Сумма обязательна.")
+    first = Finding(
+        "contradiction", "critical", "Запись через GET", "GET изменяет настройки.",
+        "Разделить чтение и запись.", "Клиент сохраняет настройки.",
+        ("B001", "B002"), (fragment, right), ("set",),
+    )
+    second = replace(
+        first, title="Описание метода противоречит записи", evidence=(left, right, extra),
+        requirement_ids=("B001", "B002", "B003"), criterion="ambiguity",
+        recommendation="Описать отдельный контракт сохранения.",
+    )
+    (merged,) = deduplicate((first, second), semantic_pairs=((1, 2),))
+    assert merged.evidence == (left, right, extra)
+    assert merged.requirement_ids == ("B001", "B002", "B003")
+    assert merged.severity == "critical"
+    assert merged.additional_recommendations == ("Описать отдельный контракт сохранения.",)

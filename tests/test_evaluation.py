@@ -71,3 +71,35 @@ def test_reference_has_extra_targets_and_unique_identifiers() -> None:
     assert len({item["id"] for item in defects}) == len(defects)
     assert {"G01", "G02", "G03", "G04"} <= {item["id"] for item in defects if item["core"]}
     assert sum(not item["core"] for item in defects) >= 8
+
+
+def test_semantic_matching_uses_verified_block_candidates(tmp_path: Path) -> None:
+    from evaluation.score import SemanticMatch, SemanticMatches
+
+    document = load_document(write_rule_fixture(tmp_path / "input.md"))
+    inventory = {block.source_id: block for block in segment_document(document) if block.source_id}
+    left = locate_quote(document, inventory["Ф-1"], "сервис всегда отправляет push")
+    right = locate_quote(document, inventory["Ф-2"], "сервис никогда не отправляет push")
+    assert left and right
+    gold = {"defects": [{
+        "id": "EX-01", "core": True, "title": "Несовместимые условия оповещения",
+        "anchors": [["всегда отправляет"], ["никогда не отправляет"]],
+        "concepts": [["неосуществимо одновременно"]],
+    }]}
+    report = {
+        "document": {"sha256": document.sha256},
+        "findings": [
+            {"id": "D-001", "title": "Уведомление одновременно нужно и запрещено",
+             "evidence": [asdict(left), asdict(right)]},
+            {"id": "D-002", "title": "Похожее замечание с одной ссылкой", "evidence": [asdict(left)]},
+        ],
+    }
+
+    class Reviewer:
+        def ask(self, system, prompt, schema):
+            (entry,) = json.loads(prompt)
+            assert [candidate["id"] for candidate in entry["candidates"]] == ["D-001"]
+            return SemanticMatches(matches=[SemanticMatch(gold_id="EX-01", finding_ids=["D-001"])])
+
+    metrics = score(document, report, gold, semantic_reviewer=Reviewer())
+    assert metrics["gold_found"] == 1 and metrics["lexical_gold_found"] == 0

@@ -39,7 +39,7 @@ REQVALIDATOR_REASONING_EFFORT=medium
 python -m reqvalidator input/requirements.pdf reports/review.md --json-output reports/review.json
 ```
 
-Markdown организатора уже есть в проекте. Для сравнения с эталонной разметкой лучше выбрать именно его, поскольку адреса в PDF и Markdown отличаются.
+Markdown организатора уже есть в проекте. Оценщику передаётся тот же файл, который проверил агент: он проверяет хеш и координаты цитат, в том числе страницы PDF.
 
 ```powershell
 python -m reqvalidator tests/fixtures/requirements.md reports/review-md.md --json-output reports/review-md.json
@@ -77,7 +77,7 @@ python -m tests.generate_pdf tests/fixtures/requirements.md tests/fixtures/requi
 python -m reqvalidator tests/fixtures/requirements.pdf reports/review-pdf.md --json-output reports/review-pdf.json
 ```
 
-После прогона Markdown-фикстуры оценщик проверяет SHA входа, координаты и дословность цитат, полноту по вручную размеченным дефектам и дубли. Несопоставленные замечания считаются кандидатами в ложные срабатывания. Для подтверждённого числа передайте `--adjudications` с JSON-объектом вида `{"D-001": "valid", "D-002": "false_positive"}`.
+После прогона оценщик проверяет SHA входа, координаты и дословность цитат, полноту по вручную размеченным дефектам и дубли. По умолчанию сопоставление лексическое. Флаг `--semantic` проверяет смысл через настроенную LLM и ограничивает кандидатов пересечением с блоками источника. Оба показателя сохраняются отдельно. Несопоставленные замечания считаются кандидатами в ложные срабатывания. Для подтверждённого числа передайте `--adjudications` с JSON-объектом вида `{"D-001": "valid", "D-002": "false_positive"}`.
 
 ```powershell
 python -m evaluation.score --document tests/fixtures/requirements.md --report reports/review-md.json --output reports/eval.json

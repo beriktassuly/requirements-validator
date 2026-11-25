@@ -75,6 +75,16 @@ class SetResponse(StrictSchema):
     findings: list[Proposal]
 
 
+class Clarification(StrictSchema):
+    target: str
+    resolved: bool
+    question: str | None
+
+
+class ClarificationResponse(StrictSchema):
+    items: list[Clarification]
+
+
 class MergePair(StrictSchema):
     left: int
     right: int
@@ -109,6 +119,7 @@ class Finding:
     scopes: tuple[Scope, ...]
     id: str = ""
     related_criteria: tuple[Criterion, ...] = ()
+    additional_recommendations: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -149,3 +160,5 @@ class ReviewReport:
     merged_proposals: int
     failed_stages: int
     warnings: tuple[str, ...]
+    context_blocks: tuple[Block, ...] = ()
+    clarifications: tuple[tuple[str, str], ...] = ()

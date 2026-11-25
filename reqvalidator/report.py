@@ -8,7 +8,7 @@ import re
 
 from pydantic import BaseModel
 
-from .model import Anchor, ReviewReport
+from .model import LOCAL_CRITERIA, Anchor, ReviewReport
 from .prompts import CRITERIA, RELATION_LABELS
 
 
@@ -24,7 +24,7 @@ CRITERION_LABELS = {
 STATUS_LABELS = {
     "pass": "Без подтверждённых замечаний",
     "issue": "Есть замечание",
-    "uncertain": "Недостаточно подтверждения",
+    "uncertain": "Требует уточнения",
     "not_applicable": "Неприменимо",
 }
 SEVERITY_LABELS = {"critical": "Критический", "major": "Существенный", "minor": "Незначительный"}
@@ -103,6 +103,7 @@ def render_markdown(report: ReviewReport) -> str:
         f"- Подтверждено уникальных замечаний — {len(report.findings)}.",
         f"- Критические — {severity_counts['critical']}, существенные — {severity_counts['major']}, "
         f"незначительные — {severity_counts['minor']}.",
+        f"- Оценок, которые требуют уточнения — {len(report.clarifications)}.",
         f"- Покрытие проверок — {'полное' if report.coverage_complete else 'неполное'}.",
         "",
         "### Критические дефекты",
@@ -134,23 +135,43 @@ def render_markdown(report: ReviewReport) -> str:
             f"| {block.id} | {_cell(block.source_id or '—')} | {_cell(location)} | {_cell(sample)} |"
         )
 
-    lines.extend([
-        "",
-        "## Проверка каждого требования",
-        "",
-        "Рубрика отдельных требований основана на ISO/IEC/IEEE 29148:2018, п. 5.2.5.",
-        "",
-        "| ID | Критерий | Статус | Связанные замечания |",
-        "|---|---|---|---|",
-    ])
-    for row in report.requirements:
-        for check in row.checks:
-            findings = by_requirement.get((row.block.id, check.criterion), []) if check.status == "issue" else []
-            ids = ", ".join(f"[{i}](#{i.lower()})" for i in findings) or "—"
+    if report.context_blocks:
+        lines.extend([
+            "", "### Контекстные блоки", "",
+            "| ID | Тип и раздел | Строки | Краткая цитата |",
+            "|---|---|---|---|",
+        ])
+        for block in report.context_blocks:
+            sample = " ".join(block.text.split())
+            if len(sample) > 220:
+                sample = sample[:217].rstrip() + "…"
+            kind = {
+                "example": "Пример", "governance": "Служебная часть",
+                "heading": "Заголовок",
+            }.get(block.kind, "Контекст")
+            location = f"{kind} / {block.section}" if block.section else kind
             lines.append(
-                f"| {row.block.id} | {CRITERION_LABELS[check.criterion]} "
-                f"| {STATUS_LABELS[check.status]} | {ids} |"
+                f"| {block.id} | {_cell(location)} | {block.start_line}–{block.end_line} | {_cell(sample)} |"
             )
+
+    labels = [CRITERION_LABELS[criterion] for criterion in LOCAL_CRITERIA]
+    lines.extend([
+        "", "## Проверка каждого требования", "",
+        "Рубрика отдельных требований основана на ISO/IEC/IEEE 29148:2018, п. 5.2.5.",
+        "", "✓ без замечаний · ✗ есть замечание · ? требует уточнения · — неприменимо", "",
+        "| ID | " + " | ".join(labels) + " |",
+        "|" + "---|" * (len(labels) + 1),
+    ])
+    marks = {"pass": "✓", "issue": "✗", "uncertain": "?", "not_applicable": "—"}
+    for row in report.requirements:
+        checks = {check.criterion: check.status for check in row.checks}
+        cells = [row.block.id]
+        for criterion in LOCAL_CRITERIA:
+            status = checks.get(criterion, "uncertain")
+            ids = by_requirement.get((row.block.id, criterion), []) if status == "issue" else []
+            links = " ".join(f"[{i}](#{i.lower()})" for i in ids)
+            cells.append(f"{marks[status]} {links}".rstrip())
+        lines.append("| " + " | ".join(cells) + " |")
 
     lines.extend([
         "",
@@ -183,7 +204,19 @@ def render_markdown(report: ReviewReport) -> str:
         for check in report.link_checks
     )
 
-    lines.extend(["", "## Реестр замечаний", ""])
+    if report.clarifications:
+        lines.extend(["", "### Вопросы к аналитику", ""])
+        for key, question in report.clarifications:
+            target, criterion = key.split("/", 1)
+            label = CRITERION_LABELS.get(criterion, RELATION_LABELS.get(criterion, criterion))
+            lines.append(f"- {_plain(target)} · {_plain(label)}. {_plain(question)}")
+
+    lines.extend([
+        "", "## Реестр замечаний", "",
+        "**Критический** — основной сценарий нельзя однозначно реализовать или проверить. "
+        "**Существенный** — есть риск переделки реализации или тестов. "
+        "**Незначительный** — оформление или уточнение с ограниченным влиянием.", "",
+    ])
     if not report.findings:
         lines.append("Подтверждённых замечаний нет.")
     for finding in report.findings:
@@ -202,7 +235,13 @@ def render_markdown(report: ReviewReport) -> str:
         ])
         if finding.scenario:
             lines.extend([f"**Сценарий.** {_plain(finding.scenario)}", ""])
-        lines.extend([f"**Исправление.** {_plain(finding.recommendation)}", "", "**Доказательства**", ""])
+        lines.extend([f"**Исправление.** {_plain(finding.recommendation)}", ""])
+        if finding.additional_recommendations:
+            lines.append("<details><summary>Дополнительные формулировки исправления</summary>")
+            lines.append("")
+            lines.extend(f"- {_plain(action)}" for action in finding.additional_recommendations)
+            lines.extend(["", "</details>", ""])
+        lines.extend(["**Доказательства**", ""])
         for evidence in finding.evidence:
             lines.extend([
                 f"- {evidence.block_id}, {_location(evidence)}",
@@ -211,12 +250,15 @@ def render_markdown(report: ReviewReport) -> str:
                 "",
             ])
 
+    decisions = DECISIONS
+    if report.coverage_complete and report.clarifications:
+        decisions = {**DECISIONS, "not_confirmed": "Готовность зависит от ответов на вопросы к аналитику."}
     lines.extend([
         "",
         "## Готовность к разработке и тестированию",
         "",
-        f"- Разработка — {DECISIONS[report.readiness.development]}",
-        f"- Тестирование — {DECISIONS[report.readiness.testing]}",
+        f"- Разработка — {decisions[report.readiness.development]}",
+        f"- Тестирование — {decisions[report.readiness.testing]}",
         "",
         "## Приоритет исправлений",
         "",
@@ -235,6 +277,7 @@ def render_markdown(report: ReviewReport) -> str:
         "",
         f"- Отброшено предложений без достаточной буквальной опоры или с неполными полями — "
         f"{report.discarded_proposals}.",
+        f"- Подтверждено замечаний до слияния — {len(report.findings) + report.merged_proposals}.",
         f"- Слито повторных замечаний — {report.merged_proposals}.",
         f"- Этапов с ошибкой вызова или схемы — {report.failed_stages}.",
     ])

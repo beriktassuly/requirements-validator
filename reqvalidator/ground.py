@@ -67,6 +67,20 @@ def anchors_overlap(left: Anchor, right: Anchor) -> bool:
     )
 
 
+def prune_anchors(anchors: Iterable[Anchor]) -> tuple[Anchor, ...]:
+    ordered = sorted(set(anchors), key=anchor_key)
+    return tuple(
+        anchor for anchor in ordered
+        if not any(
+            other != anchor and other.block_id == anchor.block_id
+            and (other.start_line, other.start_col) <= (anchor.start_line, anchor.start_col)
+            and (anchor.end_line, anchor.end_col) <= (other.end_line, other.end_col)
+            and anchor_key(other) != anchor_key(anchor)
+            for other in ordered
+        )
+    )
+
+
 def _matched_anchors(left: Finding, right: Finding) -> bool:
     return any(anchors_overlap(a, b) for a in left.evidence for b in right.evidence)
 
@@ -76,17 +90,18 @@ def _all_anchors_overlap(left: Finding, right: Finding) -> bool:
 
 
 def _eligible(left: Finding, right: Finding) -> bool:
-    cross_scope = set(left.scopes) != set(right.scopes)
-    shared_ids = set(left.requirement_ids) & set(right.requirement_ids)
+    left_blocks = {a.block_id for a in left.evidence}
+    right_blocks = {a.block_id for a in right.evidence}
+    shared_blocks = left_blocks & right_blocks
     if left.criterion != right.criterion:
         broad = {"contradiction", "ambiguity", "completeness", "verifiability"}
-        if {left.criterion, right.criterion} - broad or not cross_scope:
+        if {left.criterion, right.criterion} - broad:
             return False
     if left.criterion == right.criterion == "contradiction":
         return (
             _all_anchors_overlap(left, right) or _all_anchors_overlap(right, left)
-        ) or (cross_scope and len(shared_ids) >= 2)
-    return _matched_anchors(left, right) or (cross_scope and bool(shared_ids))
+        ) or len(shared_blocks) >= 2
+    return bool(shared_blocks)
 
 
 def _words(text: str) -> set[str]:
@@ -126,7 +141,11 @@ def _merge_group(group: list[Finding]) -> Finding:
             -len(f.evidence),
         ),
     )
-    anchors = tuple(sorted({anchor for f in group for anchor in f.evidence}, key=anchor_key))
+    anchors = prune_anchors(anchor for f in group for anchor in f.evidence)
+    recommendations = tuple(dict.fromkeys(
+        action for f in (primary, *group)
+        for action in (f.recommendation, *f.additional_recommendations)
+    ))
     scopes = tuple(sorted({scope for f in group for scope in f.scopes}))
     criteria = tuple(sorted(
         {criterion for f in group for criterion in (f.criterion, *f.related_criteria)}
@@ -137,6 +156,8 @@ def _merge_group(group: list[Finding]) -> Finding:
         severity=min((f.severity for f in group), key=SEVERITY_RANK.__getitem__),
         requirement_ids=tuple(sorted({rid for f in group for rid in f.requirement_ids})),
         evidence=anchors,
+        scenario=primary.scenario or next((f.scenario for f in group if f.scenario), None),
+        additional_recommendations=recommendations[1:],
         scopes=scopes,
         related_criteria=criteria,
     )

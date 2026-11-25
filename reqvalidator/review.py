@@ -10,10 +10,10 @@ from pydantic import BaseModel
 
 from . import prompts
 from .document import Document
-from .ground import anchor_key, anchors_overlap, deduplicate, locate_quote, merge_candidates
+from .ground import anchors_overlap, deduplicate, locate_quote, merge_candidates, prune_anchors
 from .llm import Reviewer, ReviewError
 from .model import (
-    LOCAL_CRITERIA, RELATIONS, SET_CRITERIA, Check, Criterion, DocumentInfo,
+    LOCAL_CRITERIA, RELATIONS, SET_CRITERIA, Check, ClarificationResponse, Criterion, DocumentInfo,
     EvidenceHint, Finding, LinkCheck, LocalResponse, MergeResponse, Proposal,
     Readiness, Relation, RequirementResult, ReviewReport, Scope, SetResponse,
 )
@@ -113,7 +113,7 @@ def _ground(
         anchors.add(anchor)
     if not anchors or (owner_id is not None and not any(a.block_id == owner_id for a in anchors)):
         return None
-    evidence = tuple(sorted(anchors, key=anchor_key))
+    evidence = prune_anchors(anchors)
     if proposal.criterion in {"contradiction", "duplication"}:
         has_two_places = any(
             not anchors_overlap(a, b) for i, a in enumerate(evidence) for b in evidence[i + 1:]
@@ -125,7 +125,9 @@ def _ground(
         return None
 
     severity = proposal.severity
-    if severity == "critical" and proposal.criterion in {"atomicity", "duplication", "traceability"}:
+    if all(blocks[a.block_id].kind == "governance" for a in evidence):
+        severity = "minor"
+    elif severity == "critical" and (not scenario or proposal.criterion in {"atomicity", "duplication"}):
         severity = "major"
     requirement_ids = tuple(sorted({a.block_id for a in evidence if blocks[a.block_id].is_requirement}))
     return Finding(
@@ -310,6 +312,7 @@ class ReviewEngine:
                         "id": i, "criterion": findings[i - 1].criterion,
                         "title": findings[i - 1].title, "description": findings[i - 1].description,
                         "recommendation": findings[i - 1].recommendation,
+                        "scenario": findings[i - 1].scenario,
                         "evidence": [[a.block_id, a.quote] for a in findings[i - 1].evidence],
                     }
                     for i in ids
@@ -326,6 +329,22 @@ class ReviewEngine:
                 if key in allowed:
                     merged.append((key[0], key[1]))
         return tuple(merged)
+
+    def _clarify(self, source: str, targets: dict[str, str]) -> dict[str, str | None]:
+        if not targets:
+            return {}
+        try:
+            answer = self._call(
+                prompts.CLARIFY, _dumps(targets) + "\n\nДокумент JSON:\n" + source,
+                ClarificationResponse,
+                lambda result: sorted(item.target for item in result.items) == sorted(targets),
+            )
+        except (ReviewError, ReviewLimitError):
+            return {}
+        return {
+            item.target: None if item.resolved else (item.question or "").strip() or targets[item.target]
+            for item in answer.items
+        }
 
     def run(
         self, document: Document, *, model: str, provider: str, version: str,
@@ -399,12 +418,40 @@ class ReviewEngine:
         findings.extend(set_findings)
         semantic = self._semantic_pairs(findings, warnings) if not call_blocked else ()
         unique = deduplicate(findings, semantic)
-        complete = not document.warnings and not discarded and all(
-            item.status != "uncertain"
-            for item in (
-                *set_checks, *link_checks, *(check for row in results for check in row.checks),
+        complete = not document.warnings and failed_stages == 0
+        targets = {
+            f"{row.block.id}/{check.criterion}": (
+                f"Что уточнить для проверки «{prompts.CRITERIA[check.criterion]}» в блоке {row.block.id}?"
             )
+            for row in results for check in row.checks if check.status == "uncertain"
+        }
+        targets.update({
+            f"набор/{check.criterion}": f"Как подтвердить {prompts.CRITERIA[check.criterion]}?"
+            for check in set_checks if check.status == "uncertain"
+        })
+        targets.update({
+            f"связь/{check.relation}": f"Как согласовать {prompts.RELATION_LABELS[check.relation]}?"
+            for check in link_checks if check.status == "uncertain"
+        })
+        resolved = self._clarify(source, targets) if complete else {}
+
+        def clarify_status(item: T, key: str) -> T:
+            if key in resolved and resolved[key] is None:
+                return item.model_copy(update={"status": "pass"})
+            return item
+
+        results = [
+            RequirementResult(row.block, tuple(
+                clarify_status(check, f"{row.block.id}/{check.criterion}") for check in row.checks
+            )) for row in results
+        ]
+        set_checks = tuple(clarify_status(check, f"набор/{check.criterion}") for check in set_checks)
+        link_checks = tuple(clarify_status(check, f"связь/{check.relation}") for check in link_checks)
+        questions = tuple(
+            (key, question) for key, fallback in targets.items()
+            if complete and (question := resolved.get(key, fallback)) is not None
         )
+        referenced = {anchor.block_id for finding in unique for anchor in finding.evidence}
         return ReviewReport(
             document=DocumentInfo(
                 document.name, document.format, document.sha256, len(document.lines),
@@ -413,8 +460,10 @@ class ReviewEngine:
             reviewed_at=datetime.now(UTC_PLUS_FIVE).isoformat(timespec="seconds"),
             model=model, provider=provider, version=version,
             requirements=tuple(results), set_checks=set_checks, link_checks=link_checks,
-            findings=unique, readiness=assess_readiness(unique, complete),
+            findings=unique, readiness=assess_readiness(unique, complete and not questions),
             coverage_complete=complete, discarded_proposals=discarded,
             merged_proposals=len(findings) - len(unique), failed_stages=failed_stages,
             warnings=tuple(warnings),
+            context_blocks=tuple(block for block in inventory if block.id in referenced and not block.is_requirement),
+            clarifications=questions,
         )

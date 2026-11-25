@@ -107,3 +107,52 @@ def test_cli_rejects_missing_input_without_opening_provider(
     assert main([str(missing), str(output)], reviewer_factory=should_not_create_provider) == 2
     assert not output.exists()
     assert "не найден" in capsys.readouterr().err.lower()
+
+
+def test_uncertainty_has_question_without_marking_coverage_incomplete(tmp_path: Path) -> None:
+    from reqvalidator.model import Clarification, ClarificationResponse, LocalResponse, SetResponse
+
+    class UncertainReviewer(ScriptedReviewer):
+        def ask(self, system, prompt, schema):
+            if schema is ClarificationResponse:
+                targets, _ = json.JSONDecoder().raw_decode(prompt)
+                return ClarificationResponse(items=[
+                    Clarification(target=target, resolved=False, question="Как измерять задержку?")
+                    for target in targets
+                ])
+            response = super().ask(system, prompt, schema)
+            if schema is LocalResponse:
+                for item in response.items:
+                    for check in item.checks:
+                        if check.criterion == "verifiability":
+                            check.status = "uncertain"
+            if schema is SetResponse:
+                for check in response.links:
+                    check.status = "uncertain"
+            return response
+
+    source = write_rule_fixture(tmp_path / "input.md")
+    report = ReviewEngine(UncertainReviewer()).run(
+        load_document(source), model="offline", provider="offline", version="test",
+    )
+    rendered = render_markdown(report)
+    matrix = rendered.split("## Проверка каждого требования", 1)[1].split("## Проверка набора", 1)[0]
+    rows = [line for line in matrix.splitlines() if line.startswith("| B")]
+    assert report.coverage_complete and report.failed_stages == 0
+    assert len(rows) == len(report.requirements) == 2
+    assert "[D-001](#d-001)" in matrix and "| ? |" in matrix
+    assert "Покрытие проверок — полное" in rendered
+    assert "Вопросы к аналитику" in rendered and "Как измерять задержку?" in rendered
+
+
+def test_markdown_lists_cited_context_outside_requirement_registry(tmp_path: Path) -> None:
+    from reqvalidator.segment import Block
+
+    source = write_rule_fixture(tmp_path / "input.md")
+    report = ReviewEngine(ScriptedReviewer()).run(
+        load_document(source), model="offline", provider="offline", version="test",
+    )
+    example = Block("B109", "Примеры API", "example", 10, 10, "result: ERROR")
+    rendered = render_markdown(replace(report, context_blocks=(example,)))
+    context = rendered.split("### Контекстные блоки", 1)[1].split("## Проверка каждого", 1)[0]
+    assert "| B109 | Пример / Примеры API | 10–10 | result: ERROR |" in context
