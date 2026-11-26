@@ -490,6 +490,7 @@ class ReviewEngine:
         discarded = 0
         call_blocked = False
         failed_stages = 0
+        failed_reviewers: list[ReviewRole] = []
         batch_starts = range(0, len(requirements), self.local_batch_size)
         with self._stage("local") as local_started:
             for number, start in enumerate(batch_starts, 1):
@@ -551,7 +552,7 @@ class ReviewEngine:
                         for proposals, batch in self._specialist_batches(role, document, inventory, source):
                             pending.append((role, proposals, {block.id: block for block in batch}))
                     except (ReviewError, ReviewLimitError) as error:
-                        failed_stages += 1
+                        failed_reviewers.append(role)
                         warnings.append(f"Проверка ревьюером {role} не завершена. {error}")
                         if isinstance(error, ReviewError) and error.fatal:
                             call_blocked = True
@@ -600,7 +601,7 @@ class ReviewEngine:
             for check in link_checks if check.status == "uncertain"
         })
         with self._stage("clarify"):
-            resolved = self._clarify(source, targets) if complete else {}
+            resolved = self._clarify(source, targets) if complete and not call_blocked else {}
 
         def clarify_status(item: T, key: str) -> T:
             if key in resolved and resolved[key] is None:
@@ -636,6 +637,6 @@ class ReviewEngine:
             merged_proposals=len(findings) - len(unique), failed_stages=failed_stages,
             warnings=tuple(warnings),
             context_blocks=tuple(block for block in inventory if block.id in referenced and not block.is_requirement),
-            clarifications=questions,
+            clarifications=questions, failed_reviewers=tuple(failed_reviewers),
             external_references=external_references,
         )

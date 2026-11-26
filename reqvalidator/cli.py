@@ -176,6 +176,11 @@ def main(
             print(f"JSON сохранён: {args.json_output}")
         if not report.coverage_complete:
             print("Покрытие неполное. Подробнее в разделе «Диагностика».", file=sys.stderr)
+        if report.failed_reviewers:
+            print(
+                f"Не завершили проверку дополнительные ревьюеры: {', '.join(report.failed_reviewers)}.",
+                file=sys.stderr,
+            )
         return 3 if report.failed_stages else 0
     finally:
         if show_timings and timings is not None:

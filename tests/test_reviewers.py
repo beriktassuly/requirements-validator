@@ -6,6 +6,7 @@ import pytest
 
 from reqvalidator.cli import main
 from reqvalidator.document import load_document
+from reqvalidator.llm import ReviewError
 from reqvalidator.model import Clarification, ClarificationResponse, EvidenceHint, Proposal
 from reqvalidator.review import ReviewEngine, ReviewLimitError, _payload
 from reqvalidator.reviewers import SpecialistResponse
@@ -118,3 +119,32 @@ def test_specialist_falls_back_to_existing_blocks_without_full_context(tmp_path:
     assert not report.coverage_complete and report.failed_stages == 0
     assert reviewer.calls["LocalResponse"] == reviewer.calls["SetResponse"] == 0
     assert report.findings[0].origins == ("qa",)
+
+
+def test_optional_reviewer_failure_preserves_base_coverage_and_exit_code(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
+) -> None:
+    class FailedSpecialist(ScriptedReviewer):
+        def ask(self, system: str, prompt: str, schema: type[T]) -> T:
+            if schema is SpecialistResponse:
+                raise ReviewError("Провайдер исчерпал квоту.", fatal=True)
+            return super().ask(system, prompt, schema)
+
+    _configure_offline(monkeypatch, tmp_path)
+    source = write_rule_fixture(tmp_path / "input.md")
+    markdown, sidecar = tmp_path / "report.md", tmp_path / "report.json"
+    args = [str(source), str(markdown), "--json-output", str(sidecar)]
+    assert main(args, reviewer_factory=lambda _: ScriptedReviewer()) == 0
+    baseline = json.loads(sidecar.read_text(encoding="utf-8"))
+    assert "failed_reviewers" not in baseline
+
+    assert main([*args, "--reviewers", "qa"], reviewer_factory=lambda _: FailedSpecialist()) == 0
+    report = json.loads(sidecar.read_text(encoding="utf-8"))
+    assert report["coverage_complete"] and report["failed_stages"] == 0
+    assert report["failed_reviewers"] == ["qa"]
+    assert report["readiness"] == baseline["readiness"]
+    assert [finding["id"] for finding in report["findings"]] == [
+        finding["id"] for finding in baseline["findings"]
+    ]
+    assert "Проверка ревьюером qa не завершена" in markdown.read_text(encoding="utf-8")
+    assert "Не завершили проверку дополнительные ревьюеры: qa." in capsys.readouterr().err

@@ -329,6 +329,8 @@ def render_json(report: ReviewReport, *, timings: dict[str, object] | None = Non
     payload = {"schema_version": 1, **asdict(report)}
     if report.external_references is None:
         del payload["external_references"]
+    if not report.failed_reviewers:
+        del payload["failed_reviewers"]
     for finding in payload["findings"]:
         if not finding["origins"]:
             del finding["origins"]

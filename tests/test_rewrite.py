@@ -187,3 +187,18 @@ def test_rewrite_cli_refuses_to_overwrite_report(
     ]) == 2
     assert capsys.readouterr().out == ""
     assert input_report.read_bytes() == original
+
+
+def test_rewrite_rejects_existing_block_outside_presented_context(rewrite_case: RewriteCase) -> None:
+    _, document, report, valid = rewrite_case
+    distant = next(
+        block.id for block in segment_document(document)
+        if block.text == "Служебный текст вне соседних блоков."
+    )
+    invalid = deepcopy(valid)
+    invalid["variants"][0]["target_block_ids"] = [distant]
+    reviewer = RewriteReviewer(invalid, valid)
+
+    assert propose_rewrite(reviewer, document, report, "D-001").model_dump(mode="json") == valid
+    assert len(reviewer.prompts) == 2
+    assert "Служебный текст вне соседних блоков." not in reviewer.prompts[0]

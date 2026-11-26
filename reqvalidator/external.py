@@ -282,6 +282,8 @@ def _context7(target: _Target, catalog: _Technology, api_key: str | None) -> Ext
     if isinstance(libraries, list) and len(libraries) == 1 and isinstance(libraries[0], dict):
         detail = libraries[0]
     url = _official_link(payload, catalog)
+    tag = _VERSIONED_LINK.search(url) if url else None
+    link_version = _version(tag["version"]) if tag else None
     served = _version(detail.get("served"))
     if "served" not in detail:
         library_id = payload.get("libraryId")
@@ -289,14 +291,15 @@ def _context7(target: _Target, catalog: _Technology, api_key: str | None) -> Ext
             project_id, _, tag = library_id.rpartition("/")
             if project_id == catalog.library_id:
                 served = _version(tag)
-        if served is None and url:
-            tag = _VERSIONED_LINK.search(url)
-            served = _version(tag["version"]) if tag else None
+        if served is None:
+            served = link_version
     result = replace(result, url=url, served_version=served)
     if "unverified" in (version_header, version.get("status"), detail.get("status")):
         return replace(result, status="version_mismatch")
     matches = served == target.version or (served is not None and served.startswith(target.version + "."))
-    if served is not None and not matches:
+    if (served is not None and not matches) or (
+        served is not None and link_version is not None and link_version != served
+    ):
         return replace(result, status="version_mismatch")
     # This only confirms availability of a versioned reference. A technical claim still requires
     # an independent check in the version-pinned official documentation.

@@ -75,3 +75,15 @@ def test_model_retries_keep_separate_counters_and_waits(monkeypatch: pytest.Monk
     assert timings.sdk_retry_wait_seconds == 4.5
     assert timings.sdk_retry_reasons == {"429": 1, "503": 1, "transport": 1}
     assert timings.usage == {"input_tokens": 9, "output_tokens": 6, "total_tokens": 15}
+
+
+def test_progress_marks_failed_stage_as_interrupted() -> None:
+    events: list[str] = []
+    timings = timing.RunTimings(progress=events.append)
+    with pytest.raises(ValueError, match="broken"):
+        with timings.stage("extract"):
+            raise ValueError("broken")
+    assert "Начато: извлечение текста." in events[0]
+    assert "Прервано: извлечение текста" in events[1]
+    assert "Завершено" not in events[1]
+    assert "extract" in timings.as_dict()["stages_seconds"]

@@ -179,4 +179,5 @@ class ReviewReport:
     warnings: tuple[str, ...]
     context_blocks: tuple[Block, ...] = ()
     clarifications: tuple[tuple[str, str], ...] = ()
+    failed_reviewers: tuple[ReviewRole, ...] = ()
     external_references: tuple[ExternalReference, ...] | None = None

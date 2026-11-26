@@ -152,3 +152,15 @@ def test_external_docs_compares_only_claimed_defaults(monkeypatch: pytest.Monkey
     _, references = external.check_external_docs(blocks, (), None)
     assert len(seen) == 1
     assert [reference.status for reference in references] == ["unavailable", "confirmed", "unavailable", "not_found"]
+
+
+def test_external_docs_rejects_link_to_different_version_than_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
+    url = "https://github.com/vercel/next.js/blob/v15.0.0/docs/example.mdx"
+    body = {
+        "version": {"status": "verified", "served": "15.1.11"},
+        "infoSnippets": [{"pageId": url}],
+    }
+    monkeypatch.setattr(external, "_fetch", lambda *_: (200, json.dumps(body).encode(), "verified"))
+    blocks = (Block("B001", "", "integration", 1, 1, "Next.js 15.1.11"),)
+    _, (reference, _) = external.check_external_docs(blocks, (), "testing-context7")
+    assert reference.status == "version_mismatch"

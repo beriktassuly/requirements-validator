@@ -29,7 +29,7 @@ _SYSTEM = (
     "задай один вопрос аналитику и дай минимум два варианта для одного сценария "
     "с разными предпосылками и наблюдаемыми результатами. Если правило уже определено, "
     "укажи needs_business_decision=false и question_to_analyst=null. "
-    "В target_block_ids укажи существующие блоки для правки. Блок правки может не быть источником цитаты. "
+    "В target_block_ids используй только ID из blocks или acceptance_locations. "
     "Если нужно добавить критерий, можешь указать место добавления рядом с блоком из раздела приёмки. "
     "Если меняется несколько блоков, пометь ID каждого в proposed_text. "
     "В proposed_text пиши готовую нормативную редакцию без цитат или атрибуции исходному ТЗ. "
@@ -110,7 +110,7 @@ def _verified_evidence(
 
 def _rewrite_prompt(
     document: Document, blocks: tuple[Block, ...], finding: dict[str, Any], evidence: tuple[Anchor, ...],
-) -> str:
+) -> tuple[str, set[str]]:
     focus_ids = {anchor.block_id for anchor in evidence}
     linked_ids = finding.get("requirement_ids")
     if isinstance(linked_ids, list):
@@ -132,12 +132,13 @@ def _rewrite_prompt(
     }
     return (
         _dumps(payload) + "\n\nДокумент JSON:\n"
-        + _payload(document, nearby, include_context_only=False)
+        + _payload(document, nearby, include_context_only=False),
+        {block.id for block in nearby} | set(acceptance_locations.values()),
     )
 
 
 def _rewrite_valid(
-    result: RewriteResponse, blocks: Mapping[str, Block], evidence: tuple[Anchor, ...],
+    result: RewriteResponse, editable_ids: set[str], evidence: tuple[Anchor, ...],
 ) -> bool:
     if not result.variants:
         return False
@@ -159,7 +160,7 @@ def _rewrite_valid(
             return False
         if (
             not item.target_block_ids or len(set(item.target_block_ids)) != len(item.target_block_ids)
-            or any(identifier not in blocks for identifier in item.target_block_ids)
+            or any(identifier not in editable_ids for identifier in item.target_block_ids)
         ):
             return False
         if not item.acceptance_criteria or any(
@@ -187,9 +188,10 @@ def propose_rewrite(
     blocks = segment_document(document)
     block_index = {block.id: block for block in blocks}
     evidence = _verified_evidence(document, finding, block_index)
+    prompt, editable_ids = _rewrite_prompt(document, blocks, finding, evidence)
     return call_with_validation(
-        reviewer, _SYSTEM, _rewrite_prompt(document, blocks, finding, evidence), RewriteResponse,
-        lambda result: _rewrite_valid(result, block_index, evidence),
+        reviewer, _SYSTEM, prompt, RewriteResponse,
+        lambda result: _rewrite_valid(result, editable_ids, evidence),
         max_input_chars=max_input_chars, retry_note=_RETRY_NOTE, retry_error=_RETRY_ERROR,
     )
 

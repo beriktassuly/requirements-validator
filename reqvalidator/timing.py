@@ -58,13 +58,17 @@ class RunTimings:
         self._emit(f"Начато: {label}.")
         started = monotonic()
         self._active_stages.append((stage, started))
+        outcome = "Завершено"
         try:
             yield started
+        except BaseException:
+            outcome = "Прервано"
+            raise
         finally:
             duration = monotonic() - started
             self._active_stages.pop()
             self.stages[stage] = self.stages.get(stage, 0.0) + duration
-            self._emit(f"Завершено: {label} ({duration:.1f} с).")
+            self._emit(f"{outcome}: {label} ({duration:.1f} с).")
 
     def local_batch(self, completed: int, total: int, started: float) -> None:
         remaining_minutes = (monotonic() - started) * (total - completed) / completed / 60
