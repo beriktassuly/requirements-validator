@@ -43,6 +43,7 @@ class Settings:
     max_input_chars: int = 100_000
     local_batch_size: int = 6
     min_request_interval: float = 0.0
+    concurrency: int = 3
     progress: bool = False
     quiet: bool = False
     timings: bool = False
@@ -140,6 +141,10 @@ class Settings:
         cap_name = "REQVALIDATOR_REVIEWER_MAX_FINDINGS"
         reviewer_cap = _integer(value(cap_name, "5") or "5", cap_name, 1, 30)
         assert reviewer_cap is not None
+        concurrency = _integer(
+            value("REQVALIDATOR_CONCURRENCY", "3") or "3", "REQVALIDATOR_CONCURRENCY", 1, 8,
+        )
+        assert concurrency is not None
 
         return cls(
             provider=cast(Provider, provider),
@@ -156,6 +161,7 @@ class Settings:
             max_input_chars=max_input,
             local_batch_size=batch_size,
             min_request_interval=min_interval,
+            concurrency=concurrency,
             progress=_boolean(value("REQVALIDATOR_PROGRESS"), "REQVALIDATOR_PROGRESS"),
             quiet=_boolean(value("REQVALIDATOR_QUIET"), "REQVALIDATOR_QUIET"),
             timings=_boolean(value("REQVALIDATOR_TIMINGS"), "REQVALIDATOR_TIMINGS"),

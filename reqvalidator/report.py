@@ -50,6 +50,21 @@ def _plain(value: str) -> str:
     return re.sub(r"([\\`*_[\]{}#~|])", r"\\\1", escaped)
 
 
+_INLINE_CODE = re.compile(r"(?<![`\\])(`+)(?!`)([^\n]+?)(?<!`)\1(?!`)")
+
+
+def _inline(value: str) -> str:
+    """Escape model prose but keep balanced inline code spans such as `amount=50000`."""
+    parts: list[str] = []
+    position = 0
+    for match in _INLINE_CODE.finditer(value):
+        parts.append(_plain(value[position:match.start()]))
+        parts.append(match[0])
+        position = match.end()
+    parts.append(_plain(value[position:]))
+    return "".join(parts)
+
+
 def _cell(value: str) -> str:
     return _plain(" ".join(value.split())).replace(r"\|", "&#124;")
 
@@ -130,7 +145,7 @@ def render_markdown(report: ReviewReport) -> str:
         "",
     ])
     if critical:
-        lines.extend(f"- [{f.id}](#{f.id.lower()}) — {_plain(f.title)}." for f in critical)
+        lines.extend(f"- [{f.id}](#{f.id.lower()}) — {_inline(f.title)}." for f in critical)
     else:
         lines.append("Подтверждённых критических дефектов нет.")
 
@@ -229,7 +244,7 @@ def render_markdown(report: ReviewReport) -> str:
         for key, question in report.clarifications:
             target, criterion = key.split("/", 1)
             label = CRITERION_LABELS.get(criterion, RELATION_LABELS.get(criterion, criterion))
-            lines.append(f"- {_plain(target)} · {_plain(label)}. {_plain(question)}")
+            lines.append(f"- {_plain(target)} · {_plain(label)}. {_inline(question)}")
 
     lines.extend([
         "", "## Реестр замечаний", "",
@@ -243,7 +258,7 @@ def render_markdown(report: ReviewReport) -> str:
         labels = ", ".join("отдельное требование" if scope == "local" else "набор" for scope in finding.scopes)
         lines.extend([
             f'<a id="{finding.id.lower()}"></a>',
-            f"### {finding.id} — {_plain(finding.title)}",
+            f"### {finding.id} — {_inline(finding.title)}",
             "",
             f"- Уровень — {SEVERITY_LABELS[finding.severity]}",
             f"- Критерии — {', '.join(CRITERION_LABELS[key] for key in (finding.criterion, *finding.related_criteria))}",
@@ -251,16 +266,16 @@ def render_markdown(report: ReviewReport) -> str:
             *([f"- Ревьюеры — {', '.join(finding.origins)}"] if finding.origins else []),
             f"- Требования — {', '.join(finding.requirement_ids) or 'служебный или опорный блок'}",
             "",
-            _plain(finding.description),
+            _inline(finding.description),
             "",
         ])
         if finding.scenario:
-            lines.extend([f"**Сценарий.** {_plain(finding.scenario)}", ""])
-        lines.extend([f"**Исправление.** {_plain(finding.recommendation)}", ""])
+            lines.extend([f"**Сценарий.** {_inline(finding.scenario)}", ""])
+        lines.extend([f"**Исправление.** {_inline(finding.recommendation)}", ""])
         if finding.additional_recommendations:
             lines.append("<details><summary>Дополнительные формулировки исправления</summary>")
             lines.append("")
-            lines.extend(f"- {_plain(action)}" for action in finding.additional_recommendations)
+            lines.extend(f"- {_inline(action)}" for action in finding.additional_recommendations)
             lines.extend(["", "</details>", ""])
         lines.extend(["**Доказательства**", ""])
         for evidence in finding.evidence:
@@ -300,7 +315,7 @@ def render_markdown(report: ReviewReport) -> str:
     if report.findings:
         lines.extend(
             f"{i}. [{f.id}](#{f.id.lower()}) ({SEVERITY_LABELS[f.severity].lower()}) "
-            f"— {_plain(f.recommendation)}"
+            f"— {_inline(f.recommendation)}"
             for i, f in enumerate(report.findings[:8], start=1)
         )
     else:

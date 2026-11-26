@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from contextlib import nullcontext
 import json
+from threading import Lock, local
 from time import monotonic, sleep
 from types import TracebackType
 from typing import Any, Protocol, TypeVar
@@ -51,10 +52,12 @@ class _MeasuredHttpClient(DefaultHttpxClient):
     def __init__(self, timings: RunTimings, **options: Any) -> None:
         super().__init__(**options)
         self.timings = timings
-        self._last_attempt: tuple[float, int | None] | None = None
+        # SDK retries run synchronously in the calling thread, so the previous attempt is per thread.
+        self._attempts = local()
 
     def send(self, request: Request, **kwargs: Any) -> Response:
-        previous = self._last_attempt if request.headers.get("x-stainless-retry-count", "0") != "0" else None
+        is_retry = request.headers.get("x-stainless-retry-count", "0") != "0"
+        previous = getattr(self._attempts, "last", None) if is_retry else None
         started = monotonic()
         status = None
         try:
@@ -62,7 +65,7 @@ class _MeasuredHttpClient(DefaultHttpxClient):
             status = response.status_code
         finally:
             ended = monotonic()
-            self._last_attempt = (ended, status)
+            self._attempts.last = (ended, status)
             self.timings.sdk_attempt(
                 ended - started,
                 retry_gap=started - previous[0] if previous else None,
@@ -85,6 +88,7 @@ class OpenAIReviewer:
         self.settings = settings
         self.timings = timings
         self._next_request_at = 0.0
+        self._limiter = Lock()
         base_url = "https://api.openai.com/v1" if settings.provider == "openai" else settings.base_url
         try:
             options: dict[str, Any] = {}
@@ -114,6 +118,19 @@ class OpenAIReviewer:
     def close(self) -> None:
         self._client.close()
 
+    def _wait_for_slot(self) -> None:
+        """Space the starts of provider calls across workers."""
+        if self.settings.min_request_interval == 0:
+            return
+        with self._limiter:
+            started = monotonic()
+            delay = self._next_request_at - started
+            if delay > 0:
+                sleep(delay)
+                if self.timings is not None:
+                    self.timings.add_limiter_wait(monotonic() - started)
+            self._next_request_at = monotonic() + self.settings.min_request_interval
+
     def ask(
         self, system: str, prompt: str, schema: type[T], *,
         reasoning_effort: ReasoningEffort | None = None,
@@ -132,15 +149,7 @@ class OpenAIReviewer:
                             "\n\nПовтори ответ с нуля. Предыдущий ответ не прошёл проверку формата. "
                             "Верни ровно один полный JSON-объект по схеме, без вводного текста."
                         )
-                    delay = self._next_request_at - monotonic()
-                    if delay > 0:
-                        if timings is None:
-                            sleep(delay)
-                        else:
-                            sleep_started = monotonic()
-                            sleep(delay)
-                            timings.limiter_wait_seconds += monotonic() - sleep_started
-                    self._next_request_at = monotonic() + self.settings.min_request_interval
+                    self._wait_for_slot()
                     try:
                         return request(instructions, prompt, schema, effort)
                     except _InvalidResult as error:

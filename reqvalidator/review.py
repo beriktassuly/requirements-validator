@@ -1,9 +1,12 @@
 """Model-agnostic review pipeline. It never imports the evaluation corpus."""
 
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator, Sequence
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from contextlib import AbstractContextManager, nullcontext
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
+from itertools import combinations
+from time import monotonic
 import json
 import re
 from typing import TypeVar
@@ -31,6 +34,8 @@ class ReviewLimitError(ValueError):
 
 
 T = TypeVar("T", bound=BaseModel)
+I = TypeVar("I")
+U = TypeVar("U")
 UTC_PLUS_FIVE = timezone(timedelta(hours=5))
 MISSING_ADMIN = re.compile(
     r"не заполнен[аоы]?|не указана?|не проставлен[аоы]?|заполня[а-я]+ тестировщиками|"
@@ -280,15 +285,29 @@ def call_with_validation(
     raise ReviewError(retry_error)
 
 
+def _governance_pairs(
+    findings: Sequence[Finding], blocks: dict[str, Block],
+) -> tuple[tuple[int, int], ...]:
+    """Pair completeness gaps that cite only governance blocks. They describe one document state."""
+    indices = [
+        index for index, finding in enumerate(findings, start=1)
+        if finding.criterion == "completeness" and finding.evidence
+        and all(getattr(blocks.get(a.block_id), "kind", None) == "governance" for a in finding.evidence)
+    ]
+    return tuple(combinations(indices, 2))
+
+
 class ReviewEngine:
     def __init__(
         self, reviewer: Reviewer, *, max_input_chars: int = 100_000, local_batch_size: int = 6,
         timings: RunTimings | None = None, merge_reasoning_effort: ReasoningEffort | None = None,
         reviewers: tuple[ReviewRole, ...] = (), reviewer_max_findings: int = 5,
-        external_docs: bool = False, context7_api_key: str | None = None,
+        external_docs: bool = False, context7_api_key: str | None = None, concurrency: int = 1,
     ) -> None:
         if max_input_chars < 1 or local_batch_size < 1:
             raise ValueError("Лимит входа и размер пакета должны быть положительными.")
+        if concurrency < 1:
+            raise ValueError("Число одновременных запросов должно быть положительным.")
         if not 1 <= reviewer_max_findings <= 30 or any(role not in SPECIALISTS for role in reviewers):
             raise ValueError("Укажите известные роли и лимит от 1 до 30 находок за проход.")
         self.reviewer = reviewer
@@ -300,6 +319,8 @@ class ReviewEngine:
         self.reviewer_max_findings = reviewer_max_findings
         self.external_docs = external_docs
         self.context7_api_key = context7_api_key
+        self.concurrency = concurrency
+        self._pool: ThreadPoolExecutor | None = None
 
     def _stage(self, stage: str) -> AbstractContextManager[float | None]:
         return self.timings.stage(stage) if self.timings is not None else nullcontext()
@@ -343,10 +364,56 @@ class ReviewEngine:
                 verified.append(finding)
         return verified, discarded
 
+    def _parallel_outcomes(
+        self, batches: Sequence[I], call: Callable[[I], U], *,
+        on_completed: Callable[[int], None] | None = None,
+    ) -> list[U | ReviewError | ReviewLimitError | None]:
+        """Keep a bounded queue and stop submitting when a fatal result arrives."""
+        assert self._pool is not None
+        outcomes: list[U | ReviewError | ReviewLimitError | None] = [None] * len(batches)
+        remaining = iter(enumerate(batches))
+        pending: dict[Future[U], int] = {}
+        completed = 0
+        blocked = False
+
+        def submit_next() -> None:
+            if (item := next(remaining, None)) is not None:
+                index, batch = item
+                pending[self._pool.submit(call, batch)] = index
+
+        for _ in range(self.concurrency):
+            submit_next()
+        try:
+            while pending:
+                done, _ = wait(pending, return_when=FIRST_COMPLETED)
+                for future in sorted(done, key=pending.__getitem__):
+                    index = pending.pop(future)
+                    try:
+                        outcomes[index] = future.result()
+                    except (ReviewError, ReviewLimitError) as error:
+                        outcomes[index] = error
+                        blocked |= isinstance(error, ReviewError) and error.fatal
+                    completed += 1
+                    if on_completed is not None:
+                        on_completed(completed)
+                if blocked:
+                    for future in tuple(pending):
+                        if future.cancel():
+                            del pending[future]
+                else:
+                    for _ in done:
+                        submit_next()
+        except BaseException:
+            for future in pending:
+                future.cancel()
+            raise
+        return outcomes
+
     def _semantic_pairs(
         self, findings: list[Finding], warnings: list[str], *, consolidated: bool = False,
+        skip: frozenset[tuple[int, int]] = frozenset(),
     ) -> tuple[tuple[int, int], ...]:
-        candidates = merge_candidates(findings)
+        candidates = tuple(pair for pair in merge_candidates(findings) if pair not in skip)
         if consolidated:
             blocks = [{anchor.block_id for anchor in f.evidence} for f in findings]
             candidates = tuple(
@@ -359,9 +426,10 @@ class ReviewEngine:
             self.timings.merge_pairs[stage] += len(candidates)
         if not candidates:
             return ()
-        merged: list[tuple[int, int]] = []
-        for start in range(0, len(candidates), 30):
-            batch = candidates[start:start + 30]
+        system = prompts.MERGE_CONSOLIDATED if consolidated else prompts.MERGE
+        batches = [candidates[start:start + 30] for start in range(0, len(candidates), 30)]
+
+        def ask(batch: tuple[tuple[int, int], ...]) -> MergeResponse:
             ids = sorted({i for pair in batch for i in pair})
             query = _dumps({
                 "pairs": batch,
@@ -376,15 +444,30 @@ class ReviewEngine:
                     for i in ids
                 ],
             })
-            try:
-                system = prompts.MERGE_CONSOLIDATED if consolidated else prompts.MERGE
-                answer = self._call(
-                    system, query, MergeResponse, lambda _: True,
-                    reasoning_effort=self.merge_reasoning_effort,
-                )
-            except (ReviewError, ReviewLimitError):
-                warnings.append("Семантическое слияние выполнено частично. Точные дубли удалены кодом.")
-                break
+            return self._call(
+                system, query, MergeResponse, lambda _: True,
+                reasoning_effort=self.merge_reasoning_effort,
+            )
+
+        answers: list[tuple[tuple[tuple[int, int], ...], MergeResponse]] = []
+        failed = False
+        if self._pool is None:
+            for batch in batches:
+                try:
+                    answers.append((batch, ask(batch)))
+                except (ReviewError, ReviewLimitError):
+                    failed = True
+                    break
+        else:
+            for batch, outcome in zip(batches, self._parallel_outcomes(batches, ask), strict=True):
+                if isinstance(outcome, MergeResponse):
+                    answers.append((batch, outcome))
+                else:
+                    failed = True
+        if failed:
+            warnings.append("Семантическое слияние выполнено частично. Точные дубли удалены кодом.")
+        merged: list[tuple[int, int]] = []
+        for batch, answer in answers:
             allowed = set(batch)
             for pair in answer.pairs:
                 key = tuple(sorted((pair.left, pair.right)))
@@ -392,10 +475,13 @@ class ReviewEngine:
                     merged.append((key[0], key[1]))
         return tuple(merged)
 
-    def consolidate(self, findings: list[Finding], warnings: list[str]) -> tuple[Finding, ...]:
+    def consolidate(
+        self, findings: list[Finding], warnings: list[str], *, blocks: dict[str, Block] | None = None,
+    ) -> tuple[Finding, ...]:
         with self._stage("merge"):
-            semantic = self._semantic_pairs(findings, warnings)
-            unique = deduplicate(findings, semantic)
+            forced = _governance_pairs(findings, blocks) if blocks else ()
+            semantic = self._semantic_pairs(findings, warnings, skip=frozenset(forced))
+            unique = deduplicate(findings, semantic, forced_pairs=forced)
         return self.consolidate_shared_findings(unique, warnings)
 
     def consolidate_shared_findings(
@@ -420,6 +506,51 @@ class ReviewEngine:
             item.target: None if item.resolved else (item.question or "").strip() or targets[item.target]
             for item in answer.items
         }
+
+    def _local_outcomes(
+        self, batches: list[tuple[Block, ...]], source: str, started: float | None, *, enabled: bool,
+    ) -> list[LocalResponse | ReviewError | None]:
+        """Run local batches and return outcomes in batch order.
+
+        None means the batch was not called. After a fatal error, later batches are reported
+        as not called, exactly as in the sequential run, even if a parallel call has finished.
+        """
+        total = len(batches)
+        outcomes: list[LocalResponse | ReviewError | None] = [None] * total
+
+        def progress(done: int) -> None:
+            if self.timings is not None and started is not None:
+                self.timings.local_batch(done, total, started)
+
+        def call(batch: tuple[Block, ...]) -> LocalResponse:
+            ids = tuple(block.id for block in batch)
+            return self._call(
+                prompts.LOCAL, prompts.local_input(_dumps(ids), source),
+                LocalResponse, lambda result: _local_valid(result, ids),
+            )
+
+        if not enabled or self._pool is None:
+            blocked = not enabled
+            for index, batch in enumerate(batches):
+                if not blocked:
+                    try:
+                        outcomes[index] = call(batch)
+                    except ReviewError as error:
+                        outcomes[index] = error
+                        blocked = error.fatal
+                progress(index + 1)
+            return outcomes
+
+        blocked = False
+        for index, outcome in enumerate(self._parallel_outcomes(batches, call, on_completed=progress)):
+            if blocked:
+                continue
+            if isinstance(outcome, ReviewLimitError):
+                raise outcome
+            outcomes[index] = outcome
+            if isinstance(outcome, ReviewError) and outcome.fatal:
+                blocked = True
+        return outcomes
 
     def _specialist_batches(
         self, role: ReviewRole, document: Document, inventory: tuple[Block, ...], source: str,
@@ -465,6 +596,19 @@ class ReviewEngine:
     def run(
         self, document: Document, *, model: str, provider: str, version: str,
     ) -> ReviewReport:
+        if self.concurrency == 1:
+            return self._run(document, model=model, provider=provider, version=version)
+        pool = ThreadPoolExecutor(max_workers=self.concurrency, thread_name_prefix="reqvalidator")
+        self._pool = pool
+        try:
+            return self._run(document, model=model, provider=provider, version=version)
+        finally:
+            self._pool = None
+            pool.shutdown(wait=True, cancel_futures=True)
+
+    def _run(
+        self, document: Document, *, model: str, provider: str, version: str,
+    ) -> ReviewReport:
         with self._stage("segment"):
             inventory = segment_document(document)
             blocks = {block.id: block for block in inventory}
@@ -491,22 +635,33 @@ class ReviewEngine:
         call_blocked = False
         failed_stages = 0
         failed_reviewers: list[ReviewRole] = []
-        batch_starts = range(0, len(requirements), self.local_batch_size)
+        batches = [
+            requirements[start:start + self.local_batch_size]
+            for start in range(0, len(requirements), self.local_batch_size)
+        ]
+        # The set pass does not depend on local results. Start it first so it overlaps the batches.
+        set_future: Future[SetResponse] | None = None
+        if main_fits and self._pool is not None:
+            def check_set() -> SetResponse:
+                started = monotonic()
+                try:
+                    return self._call(prompts.SET, prompts.set_input(source), SetResponse, _set_valid)
+                finally:
+                    if self.timings is not None:
+                        self.timings.record_stage("set_model", monotonic() - started)
+
+            set_future = self._pool.submit(check_set)
         with self._stage("local") as local_started:
-            for number, start in enumerate(batch_starts, 1):
-                batch = requirements[start:start + self.local_batch_size]
+            outcomes = self._local_outcomes(batches, source, local_started, enabled=main_fits)
+            for batch, outcome in zip(batches, outcomes):
                 ids = tuple(block.id for block in batch)
                 local: LocalResponse | None = None
-                if main_fits and not call_blocked:
-                    try:
-                        local = self._call(
-                            prompts.LOCAL, prompts.local_input(_dumps(ids), source),
-                            LocalResponse, lambda result: _local_valid(result, ids),
-                        )
-                    except ReviewError as error:
-                        failed_stages += 1
-                        call_blocked = error.fatal
-                        warnings.append(f"Локальный проход для {', '.join(ids)} не завершён. {error}")
+                if isinstance(outcome, ReviewError):
+                    failed_stages += 1
+                    call_blocked = outcome.fatal
+                    warnings.append(f"Локальный проход для {', '.join(ids)} не завершён. {outcome}")
+                else:
+                    local = outcome
                 if local is None:
                     results.extend(RequirementResult(block, _unknown_checks(LOCAL_CRITERIA)) for block in batch)
                 else:
@@ -521,8 +676,6 @@ class ReviewEngine:
                             discarded += rejected
                             checks = _aligned_checks(item.checks, LOCAL_CRITERIA, grounded)
                             results.append(RequirementResult(block, checks))
-                if self.timings is not None and local_started is not None:
-                    self.timings.local_batch(number, len(batch_starts), local_started)
 
         with self._stage("set"):
             with self._stage("evidence"):
@@ -533,7 +686,10 @@ class ReviewEngine:
             link_checks = tuple(LinkCheck(relation=relation, status="uncertain") for relation in RELATIONS)
             if main_fits and not call_blocked:
                 try:
-                    whole = self._call(prompts.SET, prompts.set_input(source), SetResponse, _set_valid)
+                    whole = (
+                        set_future.result() if set_future is not None
+                        else self._call(prompts.SET, prompts.set_input(source), SetResponse, _set_valid)
+                    )
                 except ReviewError as error:
                     failed_stages += 1
                     call_blocked = error.fatal
@@ -541,6 +697,8 @@ class ReviewEngine:
                 else:
                     pending.append((None, whole.findings, blocks))
             elif call_blocked:
+                if set_future is not None:
+                    set_future.cancel()
                 warnings.append("Проверка набора пропущена после ошибки обращения к модели.")
 
         if self.reviewers and not call_blocked:
@@ -582,9 +740,9 @@ class ReviewEngine:
             ]
         if call_blocked:
             with self._stage("merge"):
-                unique = deduplicate(findings)
+                unique = deduplicate(findings, forced_pairs=_governance_pairs(findings, blocks))
         else:
-            unique = self.consolidate(findings, warnings)
+            unique = self.consolidate(findings, warnings, blocks=blocks)
         complete = main_fits and not document.warnings and failed_stages == 0
         targets = {
             f"{row.block.id}/{check.criterion}": (

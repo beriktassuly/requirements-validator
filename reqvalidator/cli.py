@@ -95,6 +95,7 @@ def main(
     parser.add_argument("--quiet", action="store_const", const="1", help="Отключить сообщения о ходе проверки")
     parser.add_argument("--timings", action="store_const", const="1", help="Вывести замеры в stderr и JSON")
     parser.add_argument("--merge-reasoning-effort", help="Уровень reasoning для проходов слияния")
+    parser.add_argument("--concurrency", metavar="ЧИСЛО", help="Одновременных запросов к модели (1–8)")
     parser.add_argument("--reviewers", metavar="qa[,api]", help="Роли дополнительных ревьюеров через запятую")
     parser.add_argument("--reviewer-max-findings", metavar="ЧИСЛО", help="Лимит находок за проход роли (1–30)")
     parser.add_argument("--external-docs", action="store_const", const="1", help="Сверять внешние контракты с документацией")
@@ -103,7 +104,7 @@ def main(
     overrides = {
         f"REQVALIDATOR_{option.upper()}": value
         for option in (
-            "progress", "quiet", "timings", "merge_reasoning_effort",
+            "progress", "quiet", "timings", "merge_reasoning_effort", "concurrency",
             "reviewers", "reviewer_max_findings", "external_docs",
         )
         if (value := getattr(args, option)) is not None
@@ -148,6 +149,7 @@ def main(
                     local_batch_size=settings.local_batch_size,
                     timings=timings,
                     merge_reasoning_effort=settings.merge_reasoning_effort,
+                    concurrency=settings.concurrency,
                     reviewers=settings.reviewers,
                     reviewer_max_findings=settings.reviewer_max_findings,
                     external_docs=settings.external_docs,

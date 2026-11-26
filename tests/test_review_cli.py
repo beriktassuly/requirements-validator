@@ -89,7 +89,7 @@ def test_cli_accepts_paths_and_writes_markdown_and_json(
 
     exit_code = main([str(source), str(markdown), "--json-output", str(data)], reviewer_factory=lambda _: reviewer)
     assert exit_code == 0
-    assert list(reviewer.calls.items()) == [("LocalResponse", 1), ("SetResponse", 1)]
+    assert dict(reviewer.calls) == {"LocalResponse": 1, "SetResponse": 1}
     captured = capsys.readouterr()
     assert captured.out == f"Отчёт сохранён: {markdown}\nJSON сохранён: {data}\n"
     assert captured.err == ""
