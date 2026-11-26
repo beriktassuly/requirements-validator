@@ -144,25 +144,32 @@ def test_governance_card_lists_each_source_gap_once(tmp_path: Path) -> None:
     report = ReviewEngine(ScriptedReviewer()).run(load_document(source), **PASSPORT)
     tests = _finding("B038", "Раздел тестирования оставлен на заполнение", "Согласовать объём тестирования.", 1)
     version = _finding("B062", "Нет версии и даты", "Зафиксировать версию и дату.", 2)
+    checklist = _finding("B062", "Нет отметок чек-листа", "Заполнить чек-лист.", 2)
+    checklist = replace(checklist, evidence=(replace(checklist.evidence[0], start_col=55, end_col=73),))
+    header = _finding("B063", "Шапка таблицы", "—", 3)
     summary = replace(
         version, title="Служебные разделы неполны", description="Версия и дата не указаны.",
-        recommendation="Снова записать версию и дату.", evidence=tests.evidence + version.evidence,
+        recommendation="Снова записать версию и дату.",
+        evidence=tests.evidence + version.evidence + checklist.evidence + header.evidence,
     )
-    (card,) = deduplicate((summary, tests, version), forced_pairs=((1, 2), (1, 3), (2, 3)))
+    pairs = ((1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4))
+    (card,) = deduplicate((summary, tests, version, checklist), forced_pairs=pairs)
     result = replace(report, findings=(card,))
     markdown = render_markdown(result)
     assert (
         "- Раздел тестирования оставлен на заполнение — Описание.\n"
-        "- Нет версии и даты — Описание.\n\n"
+        "- Нет версии и даты — Описание.\n"
+        "- Нет отметок чек-листа — Описание.\n\n"
         "**Исправление.**\n\n"
         "- Согласовать объём тестирования.\n"
-        "- Зафиксировать версию и дату."
+        "- Зафиксировать версию и дату.\n"
+        "- Заполнить чек-лист."
     ) in markdown
     assert "Снова записать" not in markdown
     (exported,) = json.loads(render_json(result))["findings"]
     assert exported["description"].splitlines() == card.description.splitlines()
     assert exported["recommendation"].splitlines() == card.recommendation.splitlines()
-    assert len(exported["evidence"]) == 2
+    assert len(exported["evidence"]) == 4
 
 
 def test_merge_keeps_only_distinct_additional_recommendations() -> None:

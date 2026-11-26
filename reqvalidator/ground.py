@@ -183,17 +183,18 @@ def _merge_group(group: list[Finding], *, document_gaps: bool = False) -> Findin
         - {primary.criterion}
     ))
     if document_gaps:
-        # Prefer findings tied to specific source blocks over restatements that cite several.
+        # Prefer specific gaps. Distinct passages in one block can describe different gaps.
         by_specificity = sorted(
-            (({a.block_id for a in f.evidence}, f) for f in group),
-            key=lambda item: (len(item[0]), anchor_key(item[1].evidence[0])),
+            group,
+            key=lambda f: (len({a.block_id for a in f.evidence}), len(f.evidence), anchor_key(f.evidence[0])),
         )
-        covered: set[str] = set()
         gaps: list[Finding] = []
-        for block_ids, finding in by_specificity:
-            if block_ids - covered:
-                gaps.append(finding)
-                covered.update(block_ids)
+        for finding in by_specificity:
+            related = [gap for gap in gaps if _matched_anchors(finding, gap)]
+            # A composite restatement can also cite a heading or table header for context.
+            if len(related) > 1 or any(_all_anchors_overlap(finding, gap) for gap in related):
+                continue
+            gaps.append(finding)
         gaps.sort(key=lambda f: anchor_key(f.evidence[0]))
         descriptions = dict.fromkeys(
             f"{' '.join(f.title.split()).rstrip('.')} — {' '.join(f.description.split())}"
