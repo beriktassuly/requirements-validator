@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from evaluation.score import score
 from reqvalidator.cli import main
 from reqvalidator.document import load_document
 from reqvalidator.model import Readiness
@@ -77,21 +78,68 @@ def _configure_offline(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("REQVALIDATOR_MAX_INPUT_CHARS", "100000")
 
 
-def test_cli_accepts_paths_and_writes_markdown_and_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_cli_accepts_paths_and_writes_markdown_and_json(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
+) -> None:
     _configure_offline(monkeypatch, tmp_path)
     source = write_rule_fixture(tmp_path / "входной файл.md")
     markdown = tmp_path / "results" / "отчёт.md"
     data = tmp_path / "results" / "отчёт.json"
+    reviewer = ScriptedReviewer()
 
-    exit_code = main([str(source), str(markdown), "--json-output", str(data)], reviewer_factory=lambda _: ScriptedReviewer())
+    exit_code = main([str(source), str(markdown), "--json-output", str(data)], reviewer_factory=lambda _: reviewer)
     assert exit_code == 0
+    assert list(reviewer.calls.items()) == [("LocalResponse", 1), ("SetResponse", 1)]
+    captured = capsys.readouterr()
+    assert captured.out == f"Отчёт сохранён: {markdown}\nJSON сохранён: {data}\n"
+    assert captured.err == ""
     assert "## Паспорт прогона" in markdown.read_text(encoding="utf-8")
     payload = json.loads(data.read_text(encoding="utf-8"))
     assert payload["document"]["sha256"] == load_document(source).sha256
     assert payload["model"] == "offline-fixture"
     assert payload["readiness"] == {"development": "not_ready", "testing": "not_ready"}
     assert len(payload["findings"]) == 1
+    assert "timings" not in payload
     assert "offline-fixture-secret" not in data.read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("silent", [False, True])
+def test_cli_progress_and_timings_do_not_change_stdout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], silent: bool,
+) -> None:
+    _configure_offline(monkeypatch, tmp_path)
+    source = write_rule_fixture(tmp_path / "input.md")
+    markdown = tmp_path / "report.md"
+    data = tmp_path / "report.json"
+    args = [str(source), str(markdown), "--json-output", str(data), "--progress", "--timings"]
+    if silent:
+        args.append("--quiet")
+    script = ScriptedReviewer(reject_first_local=True)
+
+    assert main(args, reviewer_factory=lambda _: script) == 0
+
+    captured = capsys.readouterr()
+    assert captured.out == f"Отчёт сохранён: {markdown}\nJSON сохранён: {data}\n"
+    assert "Замеры" in captured.err
+    assert ("Начато: извлечение текста." in captured.err) is not silent
+    assert ("Обработано 1 из 1 пакетов" in captured.err) is not silent
+    assert ("Завершено: запись отчёта" in captured.err) is not silent
+    assert "\r" not in captured.err
+    report = json.loads(data.read_text(encoding="utf-8"))
+    timings = report.pop("timings")
+    assert timings["model_calls"] == 3
+    assert timings["retries"] == {"format": 0, "coverage": 1, "validation": 0, "network": 0}
+    assert timings["merge_pairs"] == {"merge": 0, "merge_consolidated": 0}
+    assert {"extract", "segment", "local", "set", "merge", "merge_consolidated",
+            "clarify", "evidence", "write"} <= timings["stages_seconds"].keys()
+    gold = {"defects": [{
+        "id": "PUSH", "anchors": [["всегда отправляет"], ["никогда не отправляет"]],
+        "concepts": [["push"]],
+    }]}
+    document = load_document(source)
+    original_score = score(document, report, gold)
+    assert original_score["confirmed_anchors"] == 2
+    assert score(document, {**report, "timings": timings}, gold) == original_score
 
 
 def test_cli_rejects_missing_input_without_opening_provider(

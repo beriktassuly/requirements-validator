@@ -1,6 +1,8 @@
 """Model-agnostic review pipeline. It never imports the evaluation corpus."""
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Iterator
+from contextlib import AbstractContextManager, nullcontext
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 import json
 import re
@@ -9,15 +11,19 @@ from typing import TypeVar
 from pydantic import BaseModel
 
 from . import prompts
+from .config import ReasoningEffort
 from .document import Document
+from .external import check_external_docs
 from .ground import anchors_overlap, deduplicate, locate_quote, merge_candidates, prune_anchors
-from .llm import Reviewer, ReviewError
+from .llm import OpenAIReviewer, Reviewer, ReviewError
 from .model import (
     LOCAL_CRITERIA, RELATIONS, SET_CRITERIA, Check, ClarificationResponse, Criterion, DocumentInfo,
     EvidenceHint, Finding, LinkCheck, LocalResponse, MergeResponse, Proposal,
-    Readiness, Relation, RequirementResult, ReviewReport, Scope, SetResponse,
+    Readiness, Relation, RequirementResult, ReviewReport, ReviewRole, Scope, SetResponse,
 )
+from .reviewers import SPECIALISTS, SpecialistResponse
 from .segment import Block, segment_document
+from .timing import RetryKind, RunTimings
 
 
 class ReviewLimitError(ValueError):
@@ -77,8 +83,16 @@ def _dumps(value: object) -> str:
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
 
 
-def _payload(document: Document, blocks: tuple[Block, ...]) -> str:
-    represented = {n for block in blocks for n in range(block.start_line, block.end_line + 1)}
+def _payload(
+    document: Document, blocks: tuple[Block, ...], *, include_context_only: bool = True,
+) -> str:
+    context_only = []
+    if include_context_only:
+        represented = {n for block in blocks for n in range(block.start_line, block.end_line + 1)}
+        context_only = [
+            [line.number, line.text] for line in document.lines
+            if line.number not in represented and line.text.strip()
+        ]
     return _dumps({
         "blocks": [
             {
@@ -88,10 +102,7 @@ def _payload(document: Document, blocks: tuple[Block, ...]) -> str:
             }
             for block in blocks
         ],
-        "context_only": [
-            [line.number, line.text] for line in document.lines
-            if line.number not in represented and line.text.strip()
-        ],
+        "context_only": context_only,
     })
 
 
@@ -243,35 +254,72 @@ def _aligned_links(
     return tuple(normalized)
 
 
+def call_with_validation(
+    reviewer: Reviewer, system: str, message: str, schema: type[T], validate: Callable[[T], bool],
+    *, max_input_chars: int, retry_note: str, retry_error: str, retry_kind: RetryKind = "validation",
+    timings: RunTimings | None = None, reasoning_effort: ReasoningEffort | None = None,
+) -> T:
+    """Check input budget and retry one provider-validated answer that failed a local check."""
+    if len(system) + len(message) + len(retry_note) > max_input_chars:
+        raise ReviewLimitError(
+            "Полный контекст превышает REQVALIDATOR_MAX_INPUT_CHARS. "
+            "Увеличьте лимит в пределах окна выбранной модели. Текст не обрезался."
+        )
+    provider_timed = isinstance(reviewer, OpenAIReviewer) and reviewer.timings is timings
+    for attempt, prompt in enumerate((message, message + retry_note)):
+        retry = timings.retry(retry_kind) if timings is not None and attempt else nullcontext()
+        model_call = timings.model_call(measured_transport=False) if timings is not None and not provider_timed else nullcontext()
+        with retry:
+            with model_call:
+                if reasoning_effort is not None and isinstance(reviewer, OpenAIReviewer):
+                    result = reviewer.ask(system, prompt, schema, reasoning_effort=reasoning_effort)
+                else:
+                    result = reviewer.ask(system, prompt, schema)
+            if validate(result):
+                return result
+    raise ReviewError(retry_error)
+
+
 class ReviewEngine:
     def __init__(
         self, reviewer: Reviewer, *, max_input_chars: int = 100_000, local_batch_size: int = 6,
+        timings: RunTimings | None = None, merge_reasoning_effort: ReasoningEffort | None = None,
+        reviewers: tuple[ReviewRole, ...] = (), reviewer_max_findings: int = 5,
+        external_docs: bool = False, context7_api_key: str | None = None,
     ) -> None:
         if max_input_chars < 1 or local_batch_size < 1:
             raise ValueError("Лимит входа и размер пакета должны быть положительными.")
+        if not 1 <= reviewer_max_findings <= 30 or any(role not in SPECIALISTS for role in reviewers):
+            raise ValueError("Укажите известные роли и лимит от 1 до 30 находок за проход.")
         self.reviewer = reviewer
         self.max_input_chars = max_input_chars
         self.local_batch_size = local_batch_size
+        self.timings = timings
+        self.merge_reasoning_effort = merge_reasoning_effort
+        self.reviewers = tuple(dict.fromkeys(reviewers))
+        self.reviewer_max_findings = reviewer_max_findings
+        self.external_docs = external_docs
+        self.context7_api_key = context7_api_key
+
+    def _stage(self, stage: str) -> AbstractContextManager[float | None]:
+        return self.timings.stage(stage) if self.timings is not None else nullcontext()
 
     def _call(
         self, system: str, message: str, schema: type[T], validate: Callable[[T], bool],
-    ) -> T:
-        retry_note = (
+        *,
+        retry_note: str = (
             "\n\nПовтор: предыдущий ответ нарушил покрытие. Верни ровно указанные во входе "
             "ID, критерии и связки. Не пропускай записи, у которых нет замечаний."
+        ),
+        retry_error: str = "Ответ не покрыл все обязательные ID и критерии.",
+        retry_kind: RetryKind = "coverage",
+        reasoning_effort: ReasoningEffort | None = None,
+    ) -> T:
+        return call_with_validation(
+            self.reviewer, system, message, schema, validate, max_input_chars=self.max_input_chars,
+            retry_note=retry_note, retry_error=retry_error, retry_kind=retry_kind, timings=self.timings,
+            reasoning_effort=reasoning_effort,
         )
-        if len(system) + len(message) + len(retry_note) > self.max_input_chars:
-            raise ReviewLimitError(
-                "Полный контекст превышает REQVALIDATOR_MAX_INPUT_CHARS. "
-                "Увеличьте лимит в пределах окна выбранной модели. Текст не обрезался."
-            )
-        result = self.reviewer.ask(system, message, schema)
-        if validate(result):
-            return result
-        result = self.reviewer.ask(system, message + retry_note, schema)
-        if validate(result):
-            return result
-        raise ReviewError("Ответ не покрыл все обязательные ID и критерии.")
 
     def _collect(
         self,
@@ -306,6 +354,9 @@ class ReviewEngine:
                 if len(blocks[i - 1] & blocks[j - 1]) >= 2
                 or findings[i - 1].severity == findings[j - 1].severity == "critical"
             )
+        if self.timings is not None:
+            stage = "merge_consolidated" if consolidated else "merge"
+            self.timings.merge_pairs[stage] += len(candidates)
         if not candidates:
             return ()
         merged: list[tuple[int, int]] = []
@@ -327,7 +378,10 @@ class ReviewEngine:
             })
             try:
                 system = prompts.MERGE_CONSOLIDATED if consolidated else prompts.MERGE
-                answer = self._call(system, query, MergeResponse, lambda _: True)
+                answer = self._call(
+                    system, query, MergeResponse, lambda _: True,
+                    reasoning_effort=self.merge_reasoning_effort,
+                )
             except (ReviewError, ReviewLimitError):
                 warnings.append("Семантическое слияние выполнено частично. Точные дубли удалены кодом.")
                 break
@@ -339,15 +393,17 @@ class ReviewEngine:
         return tuple(merged)
 
     def consolidate(self, findings: list[Finding], warnings: list[str]) -> tuple[Finding, ...]:
-        semantic = self._semantic_pairs(findings, warnings)
-        unique = deduplicate(findings, semantic)
+        with self._stage("merge"):
+            semantic = self._semantic_pairs(findings, warnings)
+            unique = deduplicate(findings, semantic)
         return self.consolidate_shared_findings(unique, warnings)
 
     def consolidate_shared_findings(
         self, findings: tuple[Finding, ...], warnings: list[str],
     ) -> tuple[Finding, ...]:
-        pairs = self._semantic_pairs(list(findings), warnings, consolidated=True)
-        return deduplicate(findings, pairs) if pairs else findings
+        with self._stage("merge_consolidated"):
+            pairs = self._semantic_pairs(list(findings), warnings, consolidated=True)
+            return deduplicate(findings, pairs) if pairs else findings
 
     def _clarify(self, source: str, targets: dict[str, str]) -> dict[str, str | None]:
         if not targets:
@@ -365,78 +421,170 @@ class ReviewEngine:
             for item in answer.items
         }
 
+    def _specialist_batches(
+        self, role: ReviewRole, document: Document, inventory: tuple[Block, ...], source: str,
+    ) -> Iterator[tuple[list[Proposal], tuple[Block, ...]]]:
+        specialist = SPECIALISTS[role]
+        limit = self.reviewer_max_findings
+        system = f"{specialist.task}\nЛимит находок за проход — {limit}. Верни самые существенные."
+
+        def ask(payload: str, *, partial: bool = False) -> SpecialistResponse:
+            message = "Передан фрагмент документа.\n" if partial else ""
+            return self._call(
+                system, message + "Документ JSON:\n" + payload, specialist.schema,
+                lambda result: len(result.findings) <= limit,
+                retry_note=f"\n\nПовтор: верни не более {limit} находок.",
+                retry_error=f"Ответ ревьюера {role} превысил лимит находок.",
+                retry_kind="validation",
+            )
+
+        try:
+            whole = ask(source)
+        except ReviewLimitError:
+            pass
+        else:
+            yield whole.findings, inventory
+            return
+
+        offset = 0
+        while offset < len(inventory):
+            size = min(self.local_batch_size, len(inventory) - offset)
+            while True:
+                batch = inventory[offset:offset + size]
+                try:
+                    response = ask(_payload(document, batch, include_context_only=False), partial=True)
+                except ReviewLimitError:
+                    if size == 1:
+                        raise
+                    size //= 2
+                else:
+                    break
+            yield response.findings, batch
+            offset += size
+
     def run(
         self, document: Document, *, model: str, provider: str, version: str,
     ) -> ReviewReport:
-        inventory = segment_document(document)
-        blocks = {block.id: block for block in inventory}
-        requirements = tuple(block for block in inventory if block.is_requirement)
-        if not requirements:
-            raise ReviewLimitError("В документе не выделено ни одного требования.")
-
-        source = _payload(document, inventory)
+        with self._stage("segment"):
+            inventory = segment_document(document)
+            blocks = {block.id: block for block in inventory}
+            requirements = tuple(block for block in inventory if block.is_requirement)
+            if not requirements:
+                raise ReviewLimitError("В документе не выделено ни одного требования.")
+            source = _payload(document, inventory)
         available = self.max_input_chars - 256
-        if len(prompts.SET) + len(prompts.set_input(source)) > available:
+        main_fits = len(prompts.SET) + len(prompts.set_input(source)) <= available
+        if not main_fits and not self.reviewers:
             raise ReviewLimitError(
                 "Полный документ не помещается в REQVALIDATOR_MAX_INPUT_CHARS. "
                 "Увеличьте лимит в пределах окна выбранной модели. Текст не обрезался."
             )
         warnings = list(document.warnings)
+        if not main_fits:
+            warnings.append(
+                "Основное ревью пропущено. Полный документ не помещается в "
+                "REQVALIDATOR_MAX_INPUT_CHARS. Доступны результаты дополнительных ролей."
+            )
         findings: list[Finding] = []
         results: list[RequirementResult] = []
         discarded = 0
         call_blocked = False
         failed_stages = 0
-        for start in range(0, len(requirements), self.local_batch_size):
-            batch = requirements[start:start + self.local_batch_size]
-            ids = tuple(block.id for block in batch)
-            if not call_blocked:
+        batch_starts = range(0, len(requirements), self.local_batch_size)
+        with self._stage("local") as local_started:
+            for number, start in enumerate(batch_starts, 1):
+                batch = requirements[start:start + self.local_batch_size]
+                ids = tuple(block.id for block in batch)
+                local: LocalResponse | None = None
+                if main_fits and not call_blocked:
+                    try:
+                        local = self._call(
+                            prompts.LOCAL, prompts.local_input(_dumps(ids), source),
+                            LocalResponse, lambda result: _local_valid(result, ids),
+                        )
+                    except ReviewError as error:
+                        failed_stages += 1
+                        call_blocked = error.fatal
+                        warnings.append(f"Локальный проход для {', '.join(ids)} не завершён. {error}")
+                if local is None:
+                    results.extend(RequirementResult(block, _unknown_checks(LOCAL_CRITERIA)) for block in batch)
+                else:
+                    by_id = {item.requirement_id: item for item in local.items}
+                    with self._stage("evidence"):
+                        for block in batch:
+                            item = by_id[block.id]
+                            grounded, rejected = self._collect(
+                                item.findings, document, blocks, "local", block.id,
+                            )
+                            findings.extend(grounded)
+                            discarded += rejected
+                            checks = _aligned_checks(item.checks, LOCAL_CRITERIA, grounded)
+                            results.append(RequirementResult(block, checks))
+                if self.timings is not None and local_started is not None:
+                    self.timings.local_batch(number, len(batch_starts), local_started)
+
+        with self._stage("set"):
+            with self._stage("evidence"):
+                set_findings = _governance(document, blocks)
+            pending: list[tuple[ReviewRole | None, list[Proposal], dict[str, Block]]] = []
+            whole: SetResponse | None = None
+            set_checks = _unknown_checks(SET_CRITERIA)
+            link_checks = tuple(LinkCheck(relation=relation, status="uncertain") for relation in RELATIONS)
+            if main_fits and not call_blocked:
                 try:
-                    local = self._call(
-                        prompts.LOCAL, prompts.local_input(_dumps(ids), source),
-                        LocalResponse, lambda result: _local_valid(result, ids),
-                    )
+                    whole = self._call(prompts.SET, prompts.set_input(source), SetResponse, _set_valid)
                 except ReviewError as error:
                     failed_stages += 1
                     call_blocked = error.fatal
-                    warnings.append(f"Локальный проход для {', '.join(ids)} не завершён. {error}")
+                    warnings.append(f"Проверка набора не завершена. {error}")
                 else:
-                    by_id = {item.requirement_id: item for item in local.items}
-                    for block in batch:
-                        item = by_id[block.id]
-                        grounded, rejected = self._collect(
-                            item.findings, document, blocks, "local", block.id,
-                        )
-                        findings.extend(grounded)
-                        discarded += rejected
-                        checks = _aligned_checks(item.checks, LOCAL_CRITERIA, grounded)
-                        results.append(RequirementResult(block, checks))
-                    continue
-            results.extend(RequirementResult(block, _unknown_checks(LOCAL_CRITERIA)) for block in batch)
+                    pending.append((None, whole.findings, blocks))
+            elif call_blocked:
+                warnings.append("Проверка набора пропущена после ошибки обращения к модели.")
 
-        governance = _governance(document, blocks)
-        set_findings = list(governance)
-        set_checks = _unknown_checks(SET_CRITERIA)
-        link_checks = tuple(LinkCheck(relation=relation, status="uncertain") for relation in RELATIONS)
-        if not call_blocked:
-            try:
-                whole = self._call(prompts.SET, prompts.set_input(source), SetResponse, _set_valid)
-            except ReviewError as error:
-                failed_stages += 1
-                call_blocked = error.fatal
-                warnings.append(f"Проверка набора не завершена. {error}")
-            else:
-                grounded, rejected = self._collect(whole.findings, document, blocks, "set")
-                set_findings.extend(grounded)
-                discarded += rejected
-                set_checks = _aligned_checks(whole.checks, SET_CRITERIA, set_findings)
-                link_checks = _aligned_links(whole.links, set_findings, blocks)
-        else:
-            warnings.append("Проверка набора пропущена после ошибки обращения к модели.")
+        if self.reviewers and not call_blocked:
+            with self._stage("reviewers"):
+                for role in self.reviewers:
+                    if not SPECIALISTS[role].applies(inventory):
+                        continue
+                    try:
+                        for proposals, batch in self._specialist_batches(role, document, inventory, source):
+                            pending.append((role, proposals, {block.id: block for block in batch}))
+                    except (ReviewError, ReviewLimitError) as error:
+                        failed_stages += 1
+                        warnings.append(f"Проверка ревьюером {role} не завершена. {error}")
+                        if isinstance(error, ReviewError) and error.fatal:
+                            call_blocked = True
+                            break
+
+        if pending:
+            with self._stage("evidence"):
+                for role, proposals, cited_blocks in pending:
+                    grounded, rejected = self._collect(proposals, document, cited_blocks, "set")
+                    if role is not None:
+                        grounded = [replace(finding, origins=(role,)) for finding in grounded]
+                    set_findings.extend(grounded)
+                    discarded += rejected
+        if whole is not None or any(finding.origins for finding in set_findings):
+            set_checks = _aligned_checks(
+                whole.checks if whole is not None else set_checks, SET_CRITERIA, set_findings,
+            )
+            link_checks = _aligned_links(
+                whole.links if whole is not None else link_checks, set_findings, blocks,
+            )
 
         findings.extend(set_findings)
-        unique = deduplicate(findings) if call_blocked else self.consolidate(findings, warnings)
-        complete = not document.warnings and failed_stages == 0
+        if self.reviewers:
+            findings = [
+                finding if finding.origins else replace(finding, origins=("main",))
+                for finding in findings
+            ]
+        if call_blocked:
+            with self._stage("merge"):
+                unique = deduplicate(findings)
+        else:
+            unique = self.consolidate(findings, warnings)
+        complete = main_fits and not document.warnings and failed_stages == 0
         targets = {
             f"{row.block.id}/{check.criterion}": (
                 f"Что уточнить для проверки «{prompts.CRITERIA[check.criterion]}» в блоке {row.block.id}?"
@@ -451,7 +599,8 @@ class ReviewEngine:
             f"связь/{check.relation}": f"Как согласовать {prompts.RELATION_LABELS[check.relation]}?"
             for check in link_checks if check.status == "uncertain"
         })
-        resolved = self._clarify(source, targets) if complete else {}
+        with self._stage("clarify"):
+            resolved = self._clarify(source, targets) if complete else {}
 
         def clarify_status(item: T, key: str) -> T:
             if key in resolved and resolved[key] is None:
@@ -469,6 +618,10 @@ class ReviewEngine:
             (key, question) for key, fallback in targets.items()
             if complete and (question := resolved.get(key, fallback)) is not None
         )
+        external_references = None
+        if self.external_docs:
+            with self._stage("external_docs"):
+                unique, external_references = check_external_docs(inventory, unique, self.context7_api_key)
         referenced = {anchor.block_id for finding in unique for anchor in finding.evidence}
         return ReviewReport(
             document=DocumentInfo(
@@ -484,4 +637,5 @@ class ReviewEngine:
             warnings=tuple(warnings),
             context_blocks=tuple(block for block in inventory if block.id in referenced and not block.is_requirement),
             clarifications=questions,
+            external_references=external_references,
         )

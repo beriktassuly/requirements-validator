@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import io
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from zipfile import BadZipFile
@@ -74,6 +75,12 @@ def load_document(path: Path) -> Document:
         warnings=warnings,
         page_count=page_count,
     )
+
+
+def require_report_document(document: Document, report: Mapping[str, object]) -> None:
+    source = report.get("document")
+    if not isinstance(source, dict) or source.get("sha256") != document.sha256:
+        raise ValueError("SHA-256 в отчёте отличается от входного файла. Передайте точный файл прогона.")
 
 
 def _read_pdf(data: bytes) -> tuple[list[SourceLine], tuple[str, ...], int]:

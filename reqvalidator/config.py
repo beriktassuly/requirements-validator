@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from math import isfinite
 import os
 from pathlib import Path
-from typing import Literal, cast
+from typing import Literal, cast, get_args
 from urllib.parse import urlsplit
 
 from dotenv import dotenv_values
+
+from .model import ReviewRole
 
 Provider = Literal["openai", "compatible"]
 CompatibleFormat = Literal["json_object", "json_schema", "prompt"]
@@ -40,9 +43,19 @@ class Settings:
     max_input_chars: int = 100_000
     local_batch_size: int = 6
     min_request_interval: float = 0.0
+    progress: bool = False
+    quiet: bool = False
+    timings: bool = False
+    merge_reasoning_effort: ReasoningEffort | None = None
+    reviewers: tuple[ReviewRole, ...] = ()
+    reviewer_max_findings: int = 5
+    external_docs: bool = False
+    context7_api_key: str | None = field(default=None, repr=False)
 
     @classmethod
-    def from_env(cls, env_file: str | Path | None = None) -> Settings:
+    def from_env(
+        cls, env_file: str | Path | None = None, *, overrides: Mapping[str, str] | None = None,
+    ) -> Settings:
         path = Path(env_file) if env_file is not None else Path(".env")
         try:
             with path.open(encoding="utf-8-sig") as stream:
@@ -54,6 +67,8 @@ class Settings:
         except (OSError, UnicodeError):
             raise ConfigurationError("Не удалось прочитать файл конфигурации UTF-8.") from None
         env.update(os.environ)
+        if overrides is not None:
+            env.update(overrides)
 
         def value(name: str, default: str = "") -> str:
             raw = env.get(name)
@@ -87,11 +102,10 @@ class Settings:
             raise ConfigurationError(
                 "REQVALIDATOR_COMPATIBLE_FORMAT должен быть json_object, json_schema или prompt."
             )
-        effort = value("REQVALIDATOR_REASONING_EFFORT").lower() or None
-        if effort is not None and effort not in _EFFORTS:
-            raise ConfigurationError(
-                "REQVALIDATOR_REASONING_EFFORT должен быть none, minimal, low, medium, high, xhigh или max."
-            )
+        effort_name = "REQVALIDATOR_REASONING_EFFORT"
+        merge_effort_name = "REQVALIDATOR_MERGE_REASONING_EFFORT"
+        effort = _effort(value(effort_name), effort_name)
+        merge_effort = _effort(value(merge_effort_name), merge_effort_name)
 
         timeout = _number(value("REQVALIDATOR_TIMEOUT", "90"), "REQVALIDATOR_TIMEOUT")
         if timeout is None or timeout <= 0:
@@ -110,9 +124,22 @@ class Settings:
             raise ConfigurationError("REQVALIDATOR_TEMPERATURE должен быть между 0 и 2.")
         if temperature is not None and provider == "openai" and effort not in (None, "none"):
             raise ConfigurationError("Для OpenAI с включённым reasoning оставьте REQVALIDATOR_TEMPERATURE пустым.")
+        if temperature is not None and provider == "openai" and merge_effort not in (None, "none"):
+            raise ConfigurationError("Для OpenAI с reasoning на слиянии оставьте REQVALIDATOR_TEMPERATURE пустым.")
         seed = _integer(value("REQVALIDATOR_SEED"), "REQVALIDATOR_SEED", -(2**63), 2**63 - 1)
         if seed is not None and provider == "openai":
             raise ConfigurationError("Responses API не принимает seed. Уберите REQVALIDATOR_SEED.")
+
+        reviewers = value("REQVALIDATOR_REVIEWERS").lower()
+        roles = tuple(dict.fromkeys(role.strip() for role in reviewers.split(","))) if reviewers else ()
+        allowed_roles = get_args(ReviewRole)
+        if any(role not in allowed_roles for role in roles):
+            raise ConfigurationError(
+                f"REQVALIDATOR_REVIEWERS принимает роли через запятую. Доступны {', '.join(allowed_roles)}."
+            )
+        cap_name = "REQVALIDATOR_REVIEWER_MAX_FINDINGS"
+        reviewer_cap = _integer(value(cap_name, "5") or "5", cap_name, 1, 30)
+        assert reviewer_cap is not None
 
         return cls(
             provider=cast(Provider, provider),
@@ -122,13 +149,21 @@ class Settings:
             timeout=timeout,
             validation_retries=retries,
             max_output_tokens=max_output,
-            reasoning_effort=cast(ReasoningEffort | None, effort),
+            reasoning_effort=effort,
             compatible_format=cast(CompatibleFormat, response_format),
             temperature=temperature,
             seed=seed,
             max_input_chars=max_input,
             local_batch_size=batch_size,
             min_request_interval=min_interval,
+            progress=_boolean(value("REQVALIDATOR_PROGRESS"), "REQVALIDATOR_PROGRESS"),
+            quiet=_boolean(value("REQVALIDATOR_QUIET"), "REQVALIDATOR_QUIET"),
+            timings=_boolean(value("REQVALIDATOR_TIMINGS"), "REQVALIDATOR_TIMINGS"),
+            merge_reasoning_effort=merge_effort,
+            reviewers=cast(tuple[ReviewRole, ...], roles),
+            reviewer_max_findings=reviewer_cap,
+            external_docs=_boolean(value("REQVALIDATOR_EXTERNAL_DOCS"), "REQVALIDATOR_EXTERNAL_DOCS"),
+            context7_api_key=value("CONTEXT7_API_KEY") or None,
         )
 
 
@@ -175,3 +210,19 @@ def _number(raw: str, name: str) -> float | None:
     if not isfinite(parsed):
         raise ConfigurationError(f"{name} должен быть конечным числом.")
     return parsed
+
+
+def _boolean(raw: str, name: str) -> bool:
+    value = raw.lower()
+    if value in {"1", "true", "yes", "on"}:
+        return True
+    if value in {"", "0", "false", "no", "off"}:
+        return False
+    raise ConfigurationError(f"{name} должен быть логическим значением (1 или 0).")
+
+
+def _effort(raw: str, name: str) -> ReasoningEffort | None:
+    effort = raw.lower() or None
+    if effort is not None and effort not in _EFFORTS:
+        raise ConfigurationError(f"{name} должен быть none, minimal, low, medium, high, xhigh или max.")
+    return cast(ReasoningEffort | None, effort)

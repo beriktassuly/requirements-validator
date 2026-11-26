@@ -160,6 +160,8 @@ def _merge_group(group: list[Finding]) -> Finding:
         additional_recommendations=recommendations[1:],
         scopes=scopes,
         related_criteria=criteria,
+        origins=tuple(dict.fromkeys(role for f in group for role in f.origins)),
+        external_references=tuple(dict.fromkeys(ref for f in group for ref in f.external_references)),
     )
 
 

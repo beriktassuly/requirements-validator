@@ -11,6 +11,8 @@ from reqvalidator.model import (
     RELATIONS,
     SET_CRITERIA,
     Check,
+    Clarification,
+    ClarificationResponse,
     EvidenceHint,
     LinkCheck,
     LocalItem,
@@ -54,6 +56,13 @@ class ScriptedReviewer:
         self.calls[schema.__name__] += 1
         if schema is MergeResponse:
             return cast(T, MergeResponse(pairs=[]))
+
+        if schema is ClarificationResponse:
+            targets, _ = json.JSONDecoder().raw_decode(prompt)
+            return cast(T, ClarificationResponse(items=[
+                Clarification(target=target, resolved=False, question=question)
+                for target, question in targets.items()
+            ]))
 
         source = prompt.partition("Документ JSON:\n")[2]
         inventory, _ = json.JSONDecoder().raw_decode(source.lstrip())
