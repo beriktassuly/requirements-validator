@@ -103,6 +103,45 @@ def test_cli_accepts_paths_and_writes_markdown_and_json(
     assert "offline-fixture-secret" not in data.read_text(encoding="utf-8")
 
 
+def test_cli_exports_grounded_proposals_before_merging(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
+) -> None:
+    _configure_offline(monkeypatch, tmp_path)
+    source = write_rule_fixture(tmp_path / "input.md")
+    markdown = tmp_path / "review.md"
+    data = tmp_path / "review.json"
+    debug = tmp_path / "debug" / "proposals.json"
+    reviewer = ScriptedReviewer(add_bad_proposal=True)
+    args = [str(source), str(markdown), "--json-output", str(data), "--debug-proposals", str(debug)]
+
+    assert main(args, reviewer_factory=lambda _: reviewer) == 0
+    captured = capsys.readouterr()
+    assert captured.out == f"Отчёт сохранён: {markdown}\nJSON сохранён: {data}\n"
+    assert captured.err == ""
+    proposals = json.loads(debug.read_text(encoding="utf-8"))
+    findings = json.loads(data.read_text(encoding="utf-8"))["findings"]
+    assert isinstance(proposals, list) and len(proposals) == 2 > len(findings)
+    assert {scope for proposal in proposals for scope in proposal["scopes"]} == {"local", "set"}
+    assert all(len(proposal["evidence"]) == 2 for proposal in proposals)
+
+
+@pytest.mark.parametrize("target", ["review.json", "invalid.txt"])
+def test_cli_rejects_invalid_debug_proposals_path(
+    target: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _configure_offline(monkeypatch, tmp_path)
+    source = write_rule_fixture(tmp_path / "input.md")
+    reviewer = ScriptedReviewer()
+    args = [
+        str(source), str(tmp_path / "review.md"), "--json-output", str(tmp_path / "review.json"),
+        "--debug-proposals", str(tmp_path / target),
+    ]
+
+    assert main(args, reviewer_factory=lambda _: reviewer) == 2
+    assert not reviewer.calls
+    assert not (tmp_path / target).exists()
+
+
 @pytest.mark.parametrize("silent", [False, True])
 def test_cli_progress_and_timings_do_not_change_stdout(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], silent: bool,

@@ -322,6 +322,7 @@ class ReviewEngine:
         self.context7_api_key = context7_api_key
         self.concurrency = concurrency
         self._pool: ThreadPoolExecutor | None = None
+        self.last_pre_merge: tuple[Finding, ...] = ()
 
     def _stage(self, stage: str) -> AbstractContextManager[float | None]:
         return self.timings.stage(stage) if self.timings is not None else nullcontext()
@@ -594,6 +595,7 @@ class ReviewEngine:
     def run(
         self, document: Document, *, model: str, provider: str, version: str,
     ) -> ReviewReport:
+        self.last_pre_merge = ()
         if self.concurrency == 1:
             return self._run(document, model=model, provider=provider, version=version)
         pool = ThreadPoolExecutor(max_workers=self.concurrency, thread_name_prefix="reqvalidator")
@@ -736,6 +738,7 @@ class ReviewEngine:
                 finding if finding.origins else replace(finding, origins=("main",))
                 for finding in findings
             ]
+        self.last_pre_merge = tuple(findings)
         if call_blocked:
             with self._stage("merge"):
                 unique = deduplicate(findings, forced_pairs=_governance_pairs(findings, blocks))

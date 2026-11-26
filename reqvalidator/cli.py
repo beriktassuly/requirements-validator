@@ -3,7 +3,10 @@
 import argparse
 from collections.abc import Callable, Sequence
 from contextlib import nullcontext
+from dataclasses import asdict
 from functools import partial
+from itertools import combinations
+import json
 import os
 from pathlib import Path
 import re
@@ -49,17 +52,16 @@ def _same_path(left: Path, right: Path) -> bool:
         return False
 
 
-def _check_paths(source: Path, output: Path, sidecar: Path | None) -> None:
+def _check_paths(source: Path, output: Path, sidecar: Path | None, debug_proposals: Path | None) -> None:
     if output.suffix.casefold() != ".md":
         raise ValueError("Путь отчёта должен оканчиваться на .md.")
-    if sidecar is not None and sidecar.suffix.casefold() != ".json":
+    json_paths = tuple(path for path in (sidecar, debug_proposals) if path is not None)
+    if any(path.suffix.casefold() != ".json" for path in json_paths):
         raise ValueError("Путь JSON должен оканчиваться на .json.")
-    if _same_path(source, output) or (
-        sidecar is not None and (_same_path(source, sidecar) or _same_path(output, sidecar))
-    ):
-        raise ValueError("Входной файл, отчёт и JSON должны иметь разные пути.")
-    for target in (output, sidecar):
-        if target is not None and target.is_dir():
+    if any(_same_path(left, right) for left, right in combinations((source, output, *json_paths), 2)):
+        raise ValueError("Входной файл, отчёт и выходные JSON должны иметь разные пути.")
+    for target in (output, *json_paths):
+        if target.is_dir():
             raise ValueError(f"Ожидался путь к файлу, а не каталог: {target}")
 
 
@@ -90,6 +92,7 @@ def main(
     parser.add_argument("input", type=Path, help="Документ PDF, Markdown, DOCX или TXT")
     parser.add_argument("output", type=Path, help="Путь к отчёту .md")
     parser.add_argument("--json-output", type=Path, help="Дополнительный JSON для eval")
+    parser.add_argument("--debug-proposals", type=Path, help="JSON с подтверждёнными находками до слияния")
     parser.add_argument("--env-file", type=Path, help="Путь к отдельному .env")
     parser.add_argument("--progress", action="store_const", const="1", help="Показывать ход проверки в stderr")
     parser.add_argument("--quiet", action="store_const", const="1", help="Отключить сообщения о ходе проверки")
@@ -114,7 +117,7 @@ def main(
     stderr = partial(print, file=sys.stderr, flush=True)
     try:
         try:
-            _check_paths(args.input, args.output, args.json_output)
+            _check_paths(args.input, args.output, args.json_output, args.debug_proposals)
             configuration: Settings | ConfigurationError
             try:
                 configuration = Settings.from_env(env_file=args.env_file, overrides=overrides or None)
@@ -143,7 +146,7 @@ def main(
             )
             managed = reviewer if hasattr(reviewer, "__enter__") else nullcontext(reviewer)
             with managed as active:
-                report = ReviewEngine(
+                engine = ReviewEngine(
                     active,
                     max_input_chars=settings.max_input_chars,
                     local_batch_size=settings.local_batch_size,
@@ -154,7 +157,8 @@ def main(
                     reviewer_max_findings=settings.reviewer_max_findings,
                     external_docs=settings.external_docs,
                     context7_api_key=settings.context7_api_key,
-                ).run(
+                )
+                report = engine.run(
                     document, model=settings.model, provider=settings.provider, version=_revision(),
                 )
         except ReviewLimitError as error:
@@ -170,6 +174,10 @@ def main(
                 if args.json_output is not None:
                     snapshot = timings.as_dict() if show_timings and timings is not None else None
                     _write_text(args.json_output, render_json(report, timings=snapshot))
+                if args.debug_proposals is not None:
+                    _write_text(args.debug_proposals, json.dumps(
+                        [asdict(finding) for finding in engine.last_pre_merge], ensure_ascii=False, indent=2,
+                    ) + "\n")
         except OSError as error:
             print(f"Не удалось записать выходные файлы. {error}", file=sys.stderr)
             return 4
