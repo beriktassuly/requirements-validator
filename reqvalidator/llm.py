@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+from contextlib import nullcontext
 import json
+from threading import Lock, local
 from time import monotonic, sleep
 from types import TracebackType
 from typing import Any, Protocol, TypeVar
 
+from httpx2 import Request, Response
 from openai import (
     APIConnectionError,
     APIError,
@@ -14,13 +17,15 @@ from openai import (
     APIStatusError,
     APITimeoutError,
     ContentFilterFinishReasonError,
+    DefaultHttpxClient,
     LengthFinishReasonError,
     OpenAI,
     OpenAIError,
 )
 from pydantic import BaseModel, ValidationError
 
-from .config import Settings
+from .config import ReasoningEffort, Settings
+from .timing import RunTimings
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -43,17 +48,58 @@ class _InvalidResult(ValueError):
     """The model may be able to regenerate this output."""
 
 
+class _MeasuredHttpClient(DefaultHttpxClient):
+    def __init__(self, timings: RunTimings, **options: Any) -> None:
+        super().__init__(**options)
+        self.timings = timings
+        # SDK retries run synchronously in the calling thread, so the previous attempt is per thread.
+        self._attempts = local()
+
+    def send(self, request: Request, **kwargs: Any) -> Response:
+        is_retry = request.headers.get("x-stainless-retry-count", "0") != "0"
+        previous = getattr(self._attempts, "last", None) if is_retry else None
+        started = monotonic()
+        status = None
+        try:
+            response = super().send(request, **kwargs)
+            status = response.status_code
+        finally:
+            ended = monotonic()
+            self._attempts.last = (ended, status)
+            self.timings.sdk_attempt(
+                ended - started,
+                retry_gap=started - previous[0] if previous else None,
+                previous_status=previous[1] if previous else None,
+            )
+        if response.is_success and response.is_stream_consumed:
+            # The buffered JSON may contain usage even when SDK/schema parsing fails.
+            try:
+                body = response.json()
+            except (ValueError, RuntimeError):
+                pass
+            else:
+                if isinstance(body, dict) and isinstance(usage := body.get("usage"), dict):
+                    self.timings.add_usage(usage)
+        return response
+
+
 class OpenAIReviewer:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, *, timings: RunTimings | None = None) -> None:
         self.settings = settings
+        self.timings = timings
         self._next_request_at = 0.0
+        self._limiter = Lock()
         base_url = "https://api.openai.com/v1" if settings.provider == "openai" else settings.base_url
         try:
+            options: dict[str, Any] = {}
+            if timings is not None:
+                options["http_client"] = _MeasuredHttpClient(timings, base_url=base_url, timeout=settings.timeout)
             self._client = OpenAI(
                 api_key=settings.api_key,
                 base_url=base_url,
                 timeout=settings.timeout,
                 max_retries=2,
+                **options,
             )
         except (OpenAIError, ValueError):
             raise ReviewError("Не удалось настроить клиент LLM. Проверьте ключ и адрес API.", fatal=True) from None
@@ -72,45 +118,64 @@ class OpenAIReviewer:
     def close(self) -> None:
         self._client.close()
 
-    def ask(self, system: str, prompt: str, schema: type[T]) -> T:
-        request = self._openai_responses if self.settings.provider == "openai" else self._compatible_chat
-        attempts = self.settings.validation_retries + 1
-        reason = ""
-        for attempt in range(attempts):
-            instructions = system
-            if attempt:
-                instructions += (
-                    "\n\nПовтори ответ с нуля. Предыдущий ответ не прошёл проверку формата. "
-                    "Верни ровно один полный JSON-объект по схеме, без вводного текста."
-                )
-            delay = self._next_request_at - monotonic()
+    def _wait_for_slot(self) -> None:
+        """Space the starts of provider calls across workers."""
+        if self.settings.min_request_interval == 0:
+            return
+        with self._limiter:
+            started = monotonic()
+            delay = self._next_request_at - started
             if delay > 0:
                 sleep(delay)
+                if self.timings is not None:
+                    self.timings.add_limiter_wait(monotonic() - started)
             self._next_request_at = monotonic() + self.settings.min_request_interval
-            try:
-                return request(instructions, prompt, schema)
-            except _InvalidResult as error:
-                reason = str(error)
-            except LengthFinishReasonError:
-                reason = "ответ оборван по лимиту токенов"
-            except (ValidationError, APIResponseValidationError):
-                reason = "структура ответа не соответствует схеме"
-            except ContentFilterFinishReasonError:
-                raise ReviewError("Провайдер остановил ответ фильтром содержимого.") from None
-            except APITimeoutError:
-                raise ReviewError("Истекло время ожидания LLM. Проверьте REQVALIDATOR_TIMEOUT.", fatal=True) from None
-            except APIConnectionError:
-                raise ReviewError("Не удалось подключиться к LLM. Проверьте сеть и адрес API.", fatal=True) from None
-            except APIStatusError as error:
-                raise ReviewError(_status_message(error.status_code), fatal=True) from None
-            except APIError:
-                raise ReviewError("Провайдер LLM вернул необрабатываемую ошибку.", fatal=True) from None
+
+    def ask(
+        self, system: str, prompt: str, schema: type[T], *,
+        reasoning_effort: ReasoningEffort | None = None,
+    ) -> T:
+        request = self._openai_responses if self.settings.provider == "openai" else self._compatible_chat
+        effort = reasoning_effort if reasoning_effort is not None else self.settings.reasoning_effort
+        attempts = self.settings.validation_retries + 1
+        reason = ""
+        timings = self.timings
+        with timings.model_call(measured_transport=True) if timings is not None else nullcontext():
+            for attempt in range(attempts):
+                with timings.retry("format") if timings is not None and attempt else nullcontext():
+                    instructions = system
+                    if attempt:
+                        instructions += (
+                            "\n\nПовтори ответ с нуля. Предыдущий ответ не прошёл проверку формата. "
+                            "Верни ровно один полный JSON-объект по схеме, без вводного текста."
+                        )
+                    self._wait_for_slot()
+                    try:
+                        return request(instructions, prompt, schema, effort)
+                    except _InvalidResult as error:
+                        reason = str(error)
+                    except LengthFinishReasonError:
+                        reason = "ответ оборван по лимиту токенов"
+                    except (ValidationError, APIResponseValidationError):
+                        reason = "структура ответа не соответствует схеме"
+                    except ContentFilterFinishReasonError:
+                        raise ReviewError("Провайдер остановил ответ фильтром содержимого.") from None
+                    except APITimeoutError:
+                        raise ReviewError("Истекло время ожидания LLM. Проверьте REQVALIDATOR_TIMEOUT.", fatal=True) from None
+                    except APIConnectionError:
+                        raise ReviewError("Не удалось подключиться к LLM. Проверьте сеть и адрес API.", fatal=True) from None
+                    except APIStatusError as error:
+                        raise ReviewError(_status_message(error.status_code), fatal=True) from None
+                    except APIError:
+                        raise ReviewError("Провайдер LLM вернул необрабатываемую ошибку.", fatal=True) from None
         raise ReviewError(f"Ответ LLM не принят после {attempts} попыток: {reason}.")
 
-    def _openai_responses(self, system: str, prompt: str, schema: type[T]) -> T:
+    def _openai_responses(
+        self, system: str, prompt: str, schema: type[T], effort: ReasoningEffort | None,
+    ) -> T:
         options: dict[str, Any] = {}
-        if self.settings.reasoning_effort is not None:
-            options["reasoning"] = {"effort": self.settings.reasoning_effort}
+        if effort is not None:
+            options["reasoning"] = {"effort": effort}
         if self.settings.max_output_tokens is not None:
             options["max_output_tokens"] = self.settings.max_output_tokens
         if self.settings.temperature is not None:
@@ -143,7 +208,9 @@ class OpenAIReviewer:
             raise _InvalidResult("в ответе отсутствует структурированный результат")
         return response.output_parsed
 
-    def _compatible_chat(self, system: str, prompt: str, schema: type[T]) -> T:
+    def _compatible_chat(
+        self, system: str, prompt: str, schema: type[T], effort: ReasoningEffort | None,
+    ) -> T:
         wire_format = self.settings.compatible_format
         if wire_format != "json_schema":
             schema_json = json.dumps(schema.model_json_schema(), ensure_ascii=False, separators=(",", ":"))
@@ -153,7 +220,7 @@ class OpenAIReviewer:
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}],
         }
         for parameter, option in (
-            ("reasoning_effort", self.settings.reasoning_effort),
+            ("reasoning_effort", effort),
             ("max_completion_tokens", self.settings.max_output_tokens),
             ("temperature", self.settings.temperature),
             ("seed", self.settings.seed),

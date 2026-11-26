@@ -4,11 +4,13 @@ from dataclasses import asdict
 from collections import Counter
 import html
 import json
+from pathlib import Path
 import re
+from typing import Any
 
 from pydantic import BaseModel
 
-from .model import LOCAL_CRITERIA, Anchor, ReviewReport
+from .model import LOCAL_CRITERIA, Anchor, ExternalReference, ReviewReport
 from .prompts import CRITERIA, RELATION_LABELS
 
 
@@ -28,6 +30,13 @@ STATUS_LABELS = {
     "not_applicable": "Неприменимо",
 }
 SEVERITY_LABELS = {"critical": "Критический", "major": "Существенный", "minor": "Незначительный"}
+EXTERNAL_STATUS_LABELS = {
+    "confirmed": "Подтверждено",
+    "contradicts": "Источник противоречит утверждению",
+    "version_mismatch": "Совпадение версии не подтверждено",
+    "not_found": "Подтверждение не найдено",
+    "unavailable": "Источник недоступен",
+}
 DECISIONS = {
     "ready": "Можно начинать.",
     "conditional": "Условно можно после согласования указанных исправлений.",
@@ -39,6 +48,21 @@ DECISIONS = {
 def _plain(value: str) -> str:
     escaped = html.escape(value, quote=False)
     return re.sub(r"([\\`*_[\]{}#~|])", r"\\\1", escaped)
+
+
+_INLINE_CODE = re.compile(r"(?<![`\\])(`+)(?!`)([^\n]+?)(?<!`)\1(?!`)")
+
+
+def _inline(value: str) -> str:
+    """Escape model prose but keep balanced inline code spans such as `amount=50000`."""
+    parts: list[str] = []
+    position = 0
+    for match in _INLINE_CODE.finditer(value):
+        parts.append(_plain(value[position:match.start()]))
+        parts.append(match[0])
+        position = match.end()
+    parts.append(_plain(value[position:]))
+    return "".join(parts)
 
 
 def _cell(value: str) -> str:
@@ -69,6 +93,17 @@ def _fenced(text: str) -> str:
     return f"{delimiter}text\n{text}\n{delimiter}"
 
 
+def _external_reference(reference: ExternalReference) -> str:
+    source = "Context7" if reference.source == "context7" else "Официальная документация"
+    served = _plain(reference.served_version) if reference.served_version else "не определена"
+    url = f" · <{html.escape(reference.url)}>" if reference.url else ""
+    return (
+        f"- {_plain(reference.technology)} · {source} · {EXTERNAL_STATUS_LABELS[reference.status]}. "
+        f"Запрошена версия {_plain(reference.requested_version)}, получена {served}. "
+        f"{_plain(reference.question)} · {_plain(reference.retrieved_at)}{url}"
+    )
+
+
 def render_markdown(report: ReviewReport) -> str:
     doc = report.document
     by_requirement: dict[tuple[str, str], list[str]] = {}
@@ -80,6 +115,13 @@ def render_markdown(report: ReviewReport) -> str:
 
     severity_counts = Counter(f.severity for f in report.findings)
     critical = [f for f in report.findings if f.severity == "critical"]
+    uncertain_count = 0
+    if report.coverage_complete:
+        uncertain_count = (
+            sum(check.status == "uncertain" for row in report.requirements for check in row.checks)
+            + sum(check.status == "uncertain" for check in report.set_checks)
+            + sum(check.status == "uncertain" for check in report.link_checks)
+        )
     lines = [
         "# Отчёт о проверке требований",
         "",
@@ -103,14 +145,14 @@ def render_markdown(report: ReviewReport) -> str:
         f"- Подтверждено уникальных замечаний — {len(report.findings)}.",
         f"- Критические — {severity_counts['critical']}, существенные — {severity_counts['major']}, "
         f"незначительные — {severity_counts['minor']}.",
-        f"- Оценок, которые требуют уточнения — {len(report.clarifications)}.",
+        f"- Оценок, которые требуют уточнения — {uncertain_count}.",
         f"- Покрытие проверок — {'полное' if report.coverage_complete else 'неполное'}.",
         "",
         "### Критические дефекты",
         "",
     ])
     if critical:
-        lines.extend(f"- [{f.id}](#{f.id.lower()}) — {_plain(f.title)}." for f in critical)
+        lines.extend(f"- [{f.id}](#{f.id.lower()}) — {_inline(f.title)}." for f in critical)
     else:
         lines.append("Подтверждённых критических дефектов нет.")
 
@@ -209,7 +251,7 @@ def render_markdown(report: ReviewReport) -> str:
         for key, question in report.clarifications:
             target, criterion = key.split("/", 1)
             label = CRITERION_LABELS.get(criterion, RELATION_LABELS.get(criterion, criterion))
-            lines.append(f"- {_plain(target)} · {_plain(label)}. {_plain(question)}")
+            lines.append(f"- {_plain(target)} · {_plain(label)}. {_inline(question)}")
 
     lines.extend([
         "", "## Реестр замечаний", "",
@@ -223,23 +265,32 @@ def render_markdown(report: ReviewReport) -> str:
         labels = ", ".join("отдельное требование" if scope == "local" else "набор" for scope in finding.scopes)
         lines.extend([
             f'<a id="{finding.id.lower()}"></a>',
-            f"### {finding.id} — {_plain(finding.title)}",
+            f"### {finding.id} — {_inline(finding.title)}",
             "",
             f"- Уровень — {SEVERITY_LABELS[finding.severity]}",
             f"- Критерии — {', '.join(CRITERION_LABELS[key] for key in (finding.criterion, *finding.related_criteria))}",
             f"- Обнаружено при проверке — {labels}",
+            *([f"- Ревьюеры — {', '.join(finding.origins)}"] if finding.origins else []),
             f"- Требования — {', '.join(finding.requirement_ids) or 'служебный или опорный блок'}",
             "",
-            _plain(finding.description),
-            "",
         ])
+        if finding.document_gaps:
+            lines.extend(f"- {_inline(item)}" for item in finding.description.splitlines())
+        else:
+            lines.append(_inline(finding.description))
+        lines.append("")
         if finding.scenario:
-            lines.extend([f"**Сценарий.** {_plain(finding.scenario)}", ""])
-        lines.extend([f"**Исправление.** {_plain(finding.recommendation)}", ""])
+            lines.extend([f"**Сценарий.** {_inline(finding.scenario)}", ""])
+        if finding.document_gaps:
+            lines.extend(["**Исправление.**", ""])
+            lines.extend(f"- {_inline(item)}" for item in finding.recommendation.splitlines())
+            lines.append("")
+        else:
+            lines.extend([f"**Исправление.** {_inline(finding.recommendation)}", ""])
         if finding.additional_recommendations:
             lines.append("<details><summary>Дополнительные формулировки исправления</summary>")
             lines.append("")
-            lines.extend(f"- {_plain(action)}" for action in finding.additional_recommendations)
+            lines.extend(f"- {_inline(action)}" for action in finding.additional_recommendations)
             lines.extend(["", "</details>", ""])
         lines.extend(["**Доказательства**", ""])
         for evidence in finding.evidence:
@@ -249,6 +300,19 @@ def render_markdown(report: ReviewReport) -> str:
                 _fenced(evidence.quote),
                 "",
             ])
+        if finding.external_references:
+            lines.extend(["**Внешние источники**", ""])
+            lines.extend(_external_reference(reference) for reference in finding.external_references)
+            lines.append("")
+
+    if report.external_references is not None:
+        attached = {ref for finding in report.findings for ref in finding.external_references}
+        unattached = [ref for ref in report.external_references if ref not in attached]
+        if unattached or not report.external_references:
+            lines.extend(["", "### Проверка внешних источников", ""])
+            lines.extend(_external_reference(reference) for reference in unattached)
+            if not report.external_references:
+                lines.append("Подходящих упоминаний внешних технологий с явной версией не найдено.")
 
     decisions = DECISIONS
     if report.coverage_complete and report.clarifications:
@@ -266,7 +330,7 @@ def render_markdown(report: ReviewReport) -> str:
     if report.findings:
         lines.extend(
             f"{i}. [{f.id}](#{f.id.lower()}) ({SEVERITY_LABELS[f.severity].lower()}) "
-            f"— {_plain(f.recommendation)}"
+            f"— {_inline(f.title if f.document_gaps else f.recommendation)}"
             for i, f in enumerate(report.findings[:8], start=1)
         )
     else:
@@ -291,10 +355,30 @@ def _json_value(value: object) -> object:
     raise TypeError(f"Неподдерживаемый тип в отчёте: {type(value).__name__}")
 
 
-def render_json(report: ReviewReport) -> str:
+def render_json(report: ReviewReport, *, timings: dict[str, object] | None = None) -> str:
+    payload = {"schema_version": 1, **asdict(report)}
+    if report.external_references is None:
+        del payload["external_references"]
+    if not report.failed_reviewers:
+        del payload["failed_reviewers"]
+    for finding in payload["findings"]:
+        del finding["document_gaps"]
+        if not finding["origins"]:
+            del finding["origins"]
+        if not finding["external_references"]:
+            del finding["external_references"]
+    if timings is not None:
+        payload["timings"] = timings
     return json.dumps(
-        {"schema_version": 1, **asdict(report)},
+        payload,
         ensure_ascii=False,
         indent=2,
         default=_json_value,
     ) + "\n"
+
+
+def read_json_object(path: Path) -> dict[str, Any]:
+    value = json.loads(path.read_text(encoding="utf-8-sig"))
+    if not isinstance(value, dict):
+        raise ValueError(f"Ожидается JSON-объект в {path}.")
+    return value

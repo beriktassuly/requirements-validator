@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from evaluation.score import score
 from reqvalidator.cli import main
 from reqvalidator.document import load_document
 from reqvalidator.model import Readiness
@@ -77,21 +78,107 @@ def _configure_offline(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("REQVALIDATOR_MAX_INPUT_CHARS", "100000")
 
 
-def test_cli_accepts_paths_and_writes_markdown_and_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_cli_accepts_paths_and_writes_markdown_and_json(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
+) -> None:
     _configure_offline(monkeypatch, tmp_path)
     source = write_rule_fixture(tmp_path / "входной файл.md")
     markdown = tmp_path / "results" / "отчёт.md"
     data = tmp_path / "results" / "отчёт.json"
+    reviewer = ScriptedReviewer()
 
-    exit_code = main([str(source), str(markdown), "--json-output", str(data)], reviewer_factory=lambda _: ScriptedReviewer())
+    exit_code = main([str(source), str(markdown), "--json-output", str(data)], reviewer_factory=lambda _: reviewer)
     assert exit_code == 0
+    assert dict(reviewer.calls) == {"LocalResponse": 1, "SetResponse": 1}
+    captured = capsys.readouterr()
+    assert captured.out == f"Отчёт сохранён: {markdown}\nJSON сохранён: {data}\n"
+    assert captured.err == ""
     assert "## Паспорт прогона" in markdown.read_text(encoding="utf-8")
     payload = json.loads(data.read_text(encoding="utf-8"))
     assert payload["document"]["sha256"] == load_document(source).sha256
     assert payload["model"] == "offline-fixture"
     assert payload["readiness"] == {"development": "not_ready", "testing": "not_ready"}
     assert len(payload["findings"]) == 1
+    assert "timings" not in payload
     assert "offline-fixture-secret" not in data.read_text(encoding="utf-8")
+
+
+def test_cli_exports_grounded_proposals_before_merging(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
+) -> None:
+    _configure_offline(monkeypatch, tmp_path)
+    source = write_rule_fixture(tmp_path / "input.md")
+    markdown = tmp_path / "review.md"
+    data = tmp_path / "review.json"
+    debug = tmp_path / "debug" / "proposals.json"
+    reviewer = ScriptedReviewer(add_bad_proposal=True)
+    args = [str(source), str(markdown), "--json-output", str(data), "--debug-proposals", str(debug)]
+
+    assert main(args, reviewer_factory=lambda _: reviewer) == 0
+    captured = capsys.readouterr()
+    assert captured.out == f"Отчёт сохранён: {markdown}\nJSON сохранён: {data}\n"
+    assert captured.err == ""
+    proposals = json.loads(debug.read_text(encoding="utf-8"))
+    findings = json.loads(data.read_text(encoding="utf-8"))["findings"]
+    assert isinstance(proposals, list) and len(proposals) == 2 > len(findings)
+    assert {scope for proposal in proposals for scope in proposal["scopes"]} == {"local", "set"}
+    assert all(len(proposal["evidence"]) == 2 for proposal in proposals)
+
+
+@pytest.mark.parametrize("target", ["review.json", "invalid.txt"])
+def test_cli_rejects_invalid_debug_proposals_path(
+    target: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _configure_offline(monkeypatch, tmp_path)
+    source = write_rule_fixture(tmp_path / "input.md")
+    reviewer = ScriptedReviewer()
+    args = [
+        str(source), str(tmp_path / "review.md"), "--json-output", str(tmp_path / "review.json"),
+        "--debug-proposals", str(tmp_path / target),
+    ]
+
+    assert main(args, reviewer_factory=lambda _: reviewer) == 2
+    assert not reviewer.calls
+    assert not (tmp_path / target).exists()
+
+
+@pytest.mark.parametrize("silent", [False, True])
+def test_cli_progress_and_timings_do_not_change_stdout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], silent: bool,
+) -> None:
+    _configure_offline(monkeypatch, tmp_path)
+    source = write_rule_fixture(tmp_path / "input.md")
+    markdown = tmp_path / "report.md"
+    data = tmp_path / "report.json"
+    args = [str(source), str(markdown), "--json-output", str(data), "--progress", "--timings"]
+    if silent:
+        args.append("--quiet")
+    script = ScriptedReviewer(reject_first_local=True)
+
+    assert main(args, reviewer_factory=lambda _: script) == 0
+
+    captured = capsys.readouterr()
+    assert captured.out == f"Отчёт сохранён: {markdown}\nJSON сохранён: {data}\n"
+    assert "Замеры" in captured.err
+    assert ("Начато: извлечение текста." in captured.err) is not silent
+    assert ("Обработано 1 из 1 пакетов" in captured.err) is not silent
+    assert ("Завершено: запись отчёта" in captured.err) is not silent
+    assert "\r" not in captured.err
+    report = json.loads(data.read_text(encoding="utf-8"))
+    timings = report.pop("timings")
+    assert timings["model_calls"] == 3
+    assert timings["retries"] == {"format": 0, "coverage": 1, "validation": 0, "network": 0}
+    assert timings["merge_pairs"] == {"merge": 0, "merge_consolidated": 0}
+    assert {"extract", "segment", "local", "set", "merge", "merge_consolidated",
+            "clarify", "evidence", "write"} <= timings["stages_seconds"].keys()
+    gold = {"defects": [{
+        "id": "PUSH", "anchors": [["всегда отправляет"], ["никогда не отправляет"]],
+        "concepts": [["push"]],
+    }]}
+    document = load_document(source)
+    original_score = score(document, report, gold)
+    assert original_score["confirmed_anchors"] == 2
+    assert score(document, {**report, "timings": timings}, gold) == original_score
 
 
 def test_cli_rejects_missing_input_without_opening_provider(
@@ -143,6 +230,39 @@ def test_uncertainty_has_question_without_marking_coverage_incomplete(tmp_path: 
     assert "[D-001](#d-001)" in matrix and "| ? |" in matrix
     assert "Покрытие проверок — полное" in rendered
     assert "Вопросы к аналитику" in rendered and "Как измерять задержку?" in rendered
+
+
+def test_failed_clarification_keeps_uncertainty_without_inventing_questions(tmp_path: Path) -> None:
+    from reqvalidator.llm import ReviewError
+    from reqvalidator.model import ClarificationResponse, LocalResponse, SetResponse
+
+    class UnavailableClarificationReviewer(ScriptedReviewer):
+        def ask(self, system, prompt, schema):
+            if schema is ClarificationResponse:
+                raise ReviewError("HTTP 429", fatal=True)
+            response = super().ask(system, prompt, schema)
+            if schema is LocalResponse:
+                for item in response.items:
+                    item.findings = []
+                    for check in item.checks:
+                        check.status = "uncertain" if check.criterion == "verifiability" else "pass"
+            if schema is SetResponse:
+                response.findings = []
+                for check in response.checks:
+                    check.status = "pass"
+            return response
+
+    source = write_rule_fixture(tmp_path / "input.md")
+    report = ReviewEngine(UnavailableClarificationReviewer()).run(
+        load_document(source), model="offline", provider="offline", version="test",
+    )
+    rendered = render_markdown(report)
+    assert report.coverage_complete and report.failed_stages == 0
+    assert report.readiness == Readiness("not_confirmed", "not_confirmed")
+    assert report.clarifications == ()
+    assert "Оценок, которые требуют уточнения — 2." in rendered
+    assert "Вопросы к аналитику" not in rendered
+    assert rendered.split("## Диагностика", 1)[1].count("Уточнение не выполнено.") == 1
 
 
 def test_markdown_lists_cited_context_outside_requirement_registry(tmp_path: Path) -> None:

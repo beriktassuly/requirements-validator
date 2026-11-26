@@ -15,6 +15,9 @@ Criterion = Literal[
 Status = Literal["pass", "issue", "uncertain", "not_applicable"]
 Severity = Literal["critical", "major", "minor"]
 Scope = Literal["local", "set"]
+ReviewRole = Literal["qa", "api"]
+ReviewOrigin = Literal["main", ReviewRole]
+ExternalStatus = Literal["confirmed", "contradicts", "version_mismatch", "not_found", "unavailable"]
 Relation = Literal["functional_acceptance", "business_api", "data_api", "status_examples"]
 ReadinessStatus = Literal["ready", "conditional", "not_ready", "not_confirmed"]
 
@@ -107,6 +110,18 @@ class Anchor:
 
 
 @dataclass(frozen=True, slots=True)
+class ExternalReference:
+    url: str | None
+    requested_version: str
+    served_version: str | None
+    retrieved_at: str
+    status: ExternalStatus
+    technology: str
+    question: str
+    source: Literal["context7", "official"]
+
+
+@dataclass(frozen=True, slots=True)
 class Finding:
     criterion: Criterion
     severity: Severity
@@ -120,6 +135,9 @@ class Finding:
     id: str = ""
     related_criteria: tuple[Criterion, ...] = ()
     additional_recommendations: tuple[str, ...] = ()
+    origins: tuple[ReviewOrigin, ...] = ()
+    external_references: tuple[ExternalReference, ...] = ()
+    document_gaps: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -162,3 +180,5 @@ class ReviewReport:
     warnings: tuple[str, ...]
     context_blocks: tuple[Block, ...] = ()
     clarifications: tuple[tuple[str, str], ...] = ()
+    failed_reviewers: tuple[ReviewRole, ...] = ()
+    external_references: tuple[ExternalReference, ...] | None = None

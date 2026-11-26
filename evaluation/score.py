@@ -10,10 +10,11 @@ from typing import Any
 from reqvalidator.config import Settings
 from reqvalidator.llm import OpenAIReviewer, Reviewer, ReviewError
 from reqvalidator.model import StrictSchema
+from reqvalidator.report import read_json_object
 from reqvalidator.segment import segment_document
 import unicodedata
 
-from reqvalidator.document import Document, DocumentError, load_document
+from reqvalidator.document import Document, DocumentError, load_document, require_report_document
 
 
 DEFAULT_GOLD = Path(__file__).with_name("gold.json")
@@ -202,9 +203,7 @@ def score(
     *, semantic_reviewer: Reviewer | None = None,
 ) -> dict[str, Any]:
     """Match grounded findings to the reference. Unmatched findings still need expert review."""
-    source = report.get("document")
-    if not isinstance(source, dict) or source.get("sha256") != document.sha256:
-        raise ValueError("SHA-256 в отчёте отличается от входного файла. Передайте точный файл прогона.")
+    require_report_document(document, report)
     findings = report.get("findings")
     if not isinstance(findings, list):
         raise ValueError("В отчёте ожидается массив findings.")
@@ -319,10 +318,7 @@ def score(
 
 
 def _read_json(path: Path) -> dict[str, Any]:
-    value = json.loads(path.read_text(encoding="utf-8-sig"))
-    if not isinstance(value, dict):
-        raise ValueError(f"Ожидается JSON-объект в {path}.")
-    return value
+    return read_json_object(path)
 
 
 def main() -> int:

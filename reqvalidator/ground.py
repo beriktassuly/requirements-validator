@@ -11,6 +11,11 @@ from .model import Anchor, Finding, SEVERITY_RANK
 from .segment import Block
 
 
+_BROAD_CRITERIA = frozenset({"contradiction", "ambiguity", "completeness", "verifiability", "traceability"})
+MAX_ADDITIONAL_RECOMMENDATIONS = 2
+_SIMILAR_RECOMMENDATIONS = 0.5
+
+
 def _normalize(text: str) -> tuple[str, list[int]]:
     parts: list[str] = []
     positions: list[int] = []
@@ -93,10 +98,8 @@ def _eligible(left: Finding, right: Finding) -> bool:
     left_blocks = {a.block_id for a in left.evidence}
     right_blocks = {a.block_id for a in right.evidence}
     shared_blocks = left_blocks & right_blocks
-    if left.criterion != right.criterion:
-        broad = {"contradiction", "ambiguity", "completeness", "verifiability"}
-        if {left.criterion, right.criterion} - broad:
-            return False
+    if left.criterion != right.criterion and {left.criterion, right.criterion} - _BROAD_CRITERIA:
+        return False
     if left.criterion == right.criterion == "contradiction":
         return (
             _all_anchors_overlap(left, right) or _all_anchors_overlap(right, left)
@@ -132,7 +135,32 @@ def merge_candidates(findings: Iterable[Finding]) -> tuple[tuple[int, int], ...]
     )
 
 
-def _merge_group(group: list[Finding]) -> Finding:
+def _stems(text: str) -> set[str]:
+    # Prefix stems catch Russian paraphrases that differ only in word endings.
+    return {word[:5] for word in re.findall(r"\w+", text.casefold()) if len(word) > 3}
+
+
+def _additional_recommendations(primary: str, candidates: Iterable[str]) -> tuple[str, ...]:
+    """Keep at most a few alternatives that are lexically distinct from the primary fix and each other."""
+    kept: list[str] = []
+    seen = [_stems(primary)]
+    for action in dict.fromkeys(candidates):
+        if len(kept) >= MAX_ADDITIONAL_RECOMMENDATIONS:
+            break
+        if action == primary:
+            continue
+        stems = _stems(action)
+        if stems and any(
+            other and len(stems & other) / len(stems | other) >= _SIMILAR_RECOMMENDATIONS
+            for other in seen
+        ):
+            continue
+        kept.append(action)
+        seen.append(stems)
+    return tuple(kept)
+
+
+def _merge_group(group: list[Finding], *, document_gaps: bool = False) -> Finding:
     primary = min(
         group,
         key=lambda f: (
@@ -142,37 +170,76 @@ def _merge_group(group: list[Finding]) -> Finding:
         ),
     )
     anchors = prune_anchors(anchor for f in group for anchor in f.evidence)
-    recommendations = tuple(dict.fromkeys(
-        action for f in (primary, *group)
-        for action in (f.recommendation, *f.additional_recommendations)
-    ))
+    additional = _additional_recommendations(
+        primary.recommendation,
+        (
+            action for f in (primary, *group)
+            for action in (f.recommendation, *f.additional_recommendations)
+        ),
+    )
     scopes = tuple(sorted({scope for f in group for scope in f.scopes}))
     criteria = tuple(sorted(
         {criterion for f in group for criterion in (f.criterion, *f.related_criteria)}
         - {primary.criterion}
     ))
+    if document_gaps:
+        # Prefer specific gaps. Distinct passages in one block can describe different gaps.
+        by_specificity = sorted(
+            group,
+            key=lambda f: (len({a.block_id for a in f.evidence}), len(f.evidence), anchor_key(f.evidence[0])),
+        )
+        gaps: list[Finding] = []
+        for finding in by_specificity:
+            related = [gap for gap in gaps if _matched_anchors(finding, gap)]
+            # A composite restatement can also cite a heading or table header for context.
+            if len(related) > 1 or any(_all_anchors_overlap(finding, gap) for gap in related):
+                continue
+            gaps.append(finding)
+        gaps.sort(key=lambda f: anchor_key(f.evidence[0]))
+        descriptions = dict.fromkeys(
+            f"{' '.join(f.title.split()).rstrip('.')} — {' '.join(f.description.split())}"
+            for f in gaps
+        )
+        actions = dict.fromkeys(
+            " ".join(action.split())
+            for f in gaps for action in (f.recommendation, *f.additional_recommendations)
+        )
+        primary = replace(
+            primary,
+            title="Не заполнены служебные разделы спецификации",
+            description="\n".join(descriptions),
+            recommendation="\n".join(actions),
+            document_gaps=True,
+        )
+        additional = ()
     return replace(
         primary,
         severity=min((f.severity for f in group), key=SEVERITY_RANK.__getitem__),
         requirement_ids=tuple(sorted({rid for f in group for rid in f.requirement_ids})),
         evidence=anchors,
         scenario=primary.scenario or next((f.scenario for f in group if f.scenario), None),
-        additional_recommendations=recommendations[1:],
+        additional_recommendations=additional,
         scopes=scopes,
         related_criteria=criteria,
+        origins=tuple(dict.fromkeys(role for f in group for role in f.origins)),
+        external_references=tuple(dict.fromkeys(ref for f in group for ref in f.external_references)),
     )
 
 
 def deduplicate(
     findings: Iterable[Finding],
     semantic_pairs: Iterable[tuple[int, int]] = (),
+    *,
+    forced_pairs: Iterable[tuple[int, int]] = (),
 ) -> tuple[Finding, ...]:
     items = tuple(findings)
     semantic = {tuple(sorted(pair)) for pair in semantic_pairs}
+    forced = {tuple(sorted(pair)) for pair in forced_pairs}
     compatible = {
         (i, j)
         for (i, left), (j, right) in combinations(enumerate(items, start=1), 2)
-        if _eligible(left, right) and (_exact_duplicate(left, right) or (i, j) in semantic)
+        if (i, j) in forced
+        or (_eligible(left, right) and (_exact_duplicate(left, right) or (i, j) in semantic))
     }
     groups: list[list[int]] = []
     for index in range(1, len(items) + 1):
@@ -182,7 +249,13 @@ def deduplicate(
         else:
             group.append(index)
 
-    merged = [_merge_group([items[i - 1] for i in group]) for group in groups]
+    merged = [
+        _merge_group(
+            [items[i - 1] for i in group],
+            document_gaps=any(pair in forced for pair in combinations(group, 2)),
+        )
+        for group in groups
+    ]
     merged.sort(
         key=lambda f: (SEVERITY_RANK[f.severity], anchor_key(f.evidence[0]), f.criterion, f.title)
     )
