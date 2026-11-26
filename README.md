@@ -24,21 +24,54 @@ Copy-Item .env.example .env
 
 ## Примеры отчётов
 
-На банковском PDF с OpenAI без дополнительных режимов время сократилось примерно с **12:30** до **4:38–5:52** в трёх прогонах, то есть в **2–3 раза**. Каждый прогон дал **17/19** по семантической оценке и **5/5** ключевых случаев. Результаты повторных запусков могут различаться.
-
 | Прогон | Версия | Отчёт |
 |---|---|---|
-| Для сдачи, OpenAI без дополнительных ролей | `v1.0.0` (`0fd8b02` в паспорте) | [Markdown](reports/submission.md) · [JSON](reports/submission.json) |
-| Пример `v2.0.0`, OpenAI без дополнительных режимов, 5:52 | `7a73ea2` | [Markdown](reports/pr3-g13-fix/7a73ea2/pdf-1/review.md) · [JSON](reports/pr3-g13-fix/7a73ea2/pdf-1/review.json) · [Оценка](reports/pr3-g13-fix/7a73ea2/pdf-1/semantic.json) |
+| Для сдачи — `v2.0.0`, OpenAI без дополнительных режимов, 5:52 | `7a73ea2` в паспорте | [Markdown](reports/submission.md) · [JSON](reports/submission.json) · [Оценка](reports/pr3-g13-fix/7a73ea2/pdf-1/semantic.json) |
+| Предыдущий отчёт для сдачи | [`v1.0.0`](https://github.com/beriktassuly/requirements-validator/tree/v1.0.0) (`0fd8b02` в паспорте) | [Markdown](https://github.com/beriktassuly/requirements-validator/blob/v2.0.0/reports/submission.md) · [JSON](https://github.com/beriktassuly/requirements-validator/blob/v2.0.0/reports/submission.json) |
 | OpenAI с `--reviewers qa,api --external-docs` | `f56a59c` | [Markdown](reports/pr3-openai-f56a59c/review.md) |
+
+## Как это работает
+
+```mermaid
+flowchart LR
+  A["Документ"] --> B["Текст и блоки"]
+  B --> C["Проверка пакетов"]
+  B --> D["Общая проверка"]
+  C --> E["Сверка цитат с исходником"]
+  D --> E
+  E --> F["Слияние и уточнение"]
+  F --> G["Вердикт и отчёт"]
+  G --> H["Оценка по эталону"]
+```
+
+- Рубрика опирается на ISO/IEC/IEEE 29148. Каждая цитата сверяется с исходником до включения в отчёт.
+- Независимые запросы выполняются параллельно с общим ограничителем частоты.
+- Вердикт о готовности рассчитывается кодом. Отдельный оценщик сопоставляет находки с эталоном.
+
+## Скорость и качество
+
+```mermaid
+---
+config:
+  xyChart:
+    height: 320
+---
+xychart-beta
+  title "Полный прогон банковского PDF"
+  x-axis ["v1.0.0", "v2.0.0 · лучший", "v2.0.0 · медленный"]
+  y-axis "Минуты" 0 --> 14
+  bar [12.5, 4.63, 5.87]
+```
+
+OpenAI без дополнительных режимов: около **12:30 → 4:38–5:52** в трёх прогонах, ускорение **в 2–3 раза**. В каждом — **17/19** по семантической оценке и **5/5** ключевых случаев. В отчёте для сдачи подтверждены **195/195 цитат (100%)**. Результаты повторных запусков могут различаться.
 
 ## Docker
 
 Создайте `.env`, как в быстром старте, затем выполните команды из корня проекта.
 
 ```powershell
-docker build -t bcc-reqvalidator:2.0.0 .
-docker run --rm --env-file .env -v "${PWD}:/io" bcc-reqvalidator:2.0.0 /io/input/requirements.pdf /io/reports/review.md --json-output /io/reports/review.json
+docker build -t bcc-reqvalidator:2.0.1 .
+docker run --rm --env-file .env -v "${PWD}:/io" bcc-reqvalidator:2.0.1 /io/input/requirements.pdf /io/reports/review.md --json-output /io/reports/review.json
 ```
 
 ## Настройки и режимы
