@@ -135,6 +135,7 @@ def test_forced_pairs_merge_without_shared_blocks() -> None:
     assert len(deduplicate((first, second))) == 2
     (merged,) = deduplicate((first, second), forced_pairs=((1, 2),))
     assert len(merged.evidence) == 2
+    assert first.title in merged.description and second.title in merged.description
     assert first.recommendation in merged.recommendation and second.recommendation in merged.recommendation
 
 

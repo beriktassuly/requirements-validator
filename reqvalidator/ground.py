@@ -184,7 +184,9 @@ def _merge_group(group: list[Finding], *, document_gaps: bool = False) -> Findin
     ))
     if document_gaps:
         # Independent administrative actions must survive one shared report card.
-        descriptions = dict.fromkeys(f.description for f in group)
+        descriptions = dict.fromkeys(
+            f"{f.title.rstrip('.')} — {f.description.rstrip('.')}" for f in group
+        )
         actions = dict.fromkeys(action for f in group for action in (f.recommendation, *f.additional_recommendations))
         primary = replace(
             primary,
