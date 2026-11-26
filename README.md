@@ -50,7 +50,11 @@ REQVALIDATOR_MIN_REQUEST_INTERVAL=0
 python -m reqvalidator input/requirements.pdf reports/review.md --json-output reports/review.json
 ```
 
-Отчёт для сдачи получен через OpenAI Responses с моделью `gpt-6.2-sol`. Проверочный прогон Gemini на том же PDF выявил все четыре контрольных дефекта, но дал больше замечаний и повторов. [Отчёт Markdown](reports/submission.md) · [Данные JSON](reports/submission.json)
+Отчёт для сдачи получен версией `v1.0.0` (коммит `0fd8b02` из паспорта), через OpenAI Responses с моделью `gpt-6.2-sol`, без дополнительных ролей. [Отчёт Markdown](reports/submission.md) · [Данные JSON](reports/submission.json)
+
+Пример прогона с `--reviewers qa,api` на коммите `f56a59c`. [Отчёт с дополнительными ролями](reports/pr3-openai-f56a59c/review.md)
+
+Проверочный прогон Gemini на том же PDF выявил все четыре контрольных дефекта и дал больше замечаний и повторов.
 
 Даже при одинаковом входном файле и настройках ответы модели могут различаться. При повторном прогоне могут измениться число и формулировки замечаний. Агент в каждом прогоне сверяет цитаты с исходным документом.
 

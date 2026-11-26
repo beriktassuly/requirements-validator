@@ -183,16 +183,32 @@ def _merge_group(group: list[Finding], *, document_gaps: bool = False) -> Findin
         - {primary.criterion}
     ))
     if document_gaps:
-        # Independent administrative actions must survive one shared report card.
-        descriptions = dict.fromkeys(
-            f"{f.title.rstrip('.')} — {f.description.rstrip('.')}" for f in group
+        # Prefer findings tied to specific source blocks over restatements that cite several.
+        by_specificity = sorted(
+            (({a.block_id for a in f.evidence}, f) for f in group),
+            key=lambda item: (len(item[0]), anchor_key(item[1].evidence[0])),
         )
-        actions = dict.fromkeys(action for f in group for action in (f.recommendation, *f.additional_recommendations))
+        covered: set[str] = set()
+        gaps: list[Finding] = []
+        for block_ids, finding in by_specificity:
+            if block_ids - covered:
+                gaps.append(finding)
+                covered.update(block_ids)
+        gaps.sort(key=lambda f: anchor_key(f.evidence[0]))
+        descriptions = dict.fromkeys(
+            f"{' '.join(f.title.split()).rstrip('.')} — {' '.join(f.description.split())}"
+            for f in gaps
+        )
+        actions = dict.fromkeys(
+            " ".join(action.split())
+            for f in gaps for action in (f.recommendation, *f.additional_recommendations)
+        )
         primary = replace(
             primary,
             title="Не заполнены служебные разделы спецификации",
-            description=" ".join(text.rstrip(".") + "." for text in descriptions),
-            recommendation=" ".join(action.rstrip(".") + "." for action in actions),
+            description="\n".join(descriptions),
+            recommendation="\n".join(actions),
+            document_gaps=True,
         )
         additional = ()
     return replace(

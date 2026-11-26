@@ -14,7 +14,7 @@ from reqvalidator.document import load_document
 from reqvalidator.ground import deduplicate
 from reqvalidator.llm import ReviewError
 from reqvalidator.model import Anchor, Finding, LocalResponse
-from reqvalidator.report import render_markdown
+from reqvalidator.report import render_json, render_markdown
 from reqvalidator.review import ReviewEngine
 from reqvalidator.timing import RunTimings
 from tests.fakes import TWO_RULES, ScriptedReviewer, T, write_rule_fixture
@@ -137,6 +137,32 @@ def test_forced_pairs_merge_without_shared_blocks() -> None:
     assert len(merged.evidence) == 2
     assert first.title in merged.description and second.title in merged.description
     assert first.recommendation in merged.recommendation and second.recommendation in merged.recommendation
+
+
+def test_governance_card_lists_each_source_gap_once(tmp_path: Path) -> None:
+    source = write_rule_fixture(tmp_path / "input.md")
+    report = ReviewEngine(ScriptedReviewer()).run(load_document(source), **PASSPORT)
+    tests = _finding("B038", "Раздел тестирования оставлен на заполнение", "Согласовать объём тестирования.", 1)
+    version = _finding("B062", "Нет версии и даты", "Зафиксировать версию и дату.", 2)
+    summary = replace(
+        version, title="Служебные разделы неполны", description="Версия и дата не указаны.",
+        recommendation="Снова записать версию и дату.", evidence=tests.evidence + version.evidence,
+    )
+    (card,) = deduplicate((summary, tests, version), forced_pairs=((1, 2), (1, 3), (2, 3)))
+    result = replace(report, findings=(card,))
+    markdown = render_markdown(result)
+    assert (
+        "- Раздел тестирования оставлен на заполнение — Описание.\n"
+        "- Нет версии и даты — Описание.\n\n"
+        "**Исправление.**\n\n"
+        "- Согласовать объём тестирования.\n"
+        "- Зафиксировать версию и дату."
+    ) in markdown
+    assert "Снова записать" not in markdown
+    (exported,) = json.loads(render_json(result))["findings"]
+    assert exported["description"].splitlines() == card.description.splitlines()
+    assert exported["recommendation"].splitlines() == card.recommendation.splitlines()
+    assert len(exported["evidence"]) == 2
 
 
 def test_merge_keeps_only_distinct_additional_recommendations() -> None:

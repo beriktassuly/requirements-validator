@@ -266,12 +266,20 @@ def render_markdown(report: ReviewReport) -> str:
             *([f"- Ревьюеры — {', '.join(finding.origins)}"] if finding.origins else []),
             f"- Требования — {', '.join(finding.requirement_ids) or 'служебный или опорный блок'}",
             "",
-            _inline(finding.description),
-            "",
         ])
+        if finding.document_gaps:
+            lines.extend(f"- {_inline(item)}" for item in finding.description.splitlines())
+        else:
+            lines.append(_inline(finding.description))
+        lines.append("")
         if finding.scenario:
             lines.extend([f"**Сценарий.** {_inline(finding.scenario)}", ""])
-        lines.extend([f"**Исправление.** {_inline(finding.recommendation)}", ""])
+        if finding.document_gaps:
+            lines.extend(["**Исправление.**", ""])
+            lines.extend(f"- {_inline(item)}" for item in finding.recommendation.splitlines())
+            lines.append("")
+        else:
+            lines.extend([f"**Исправление.** {_inline(finding.recommendation)}", ""])
         if finding.additional_recommendations:
             lines.append("<details><summary>Дополнительные формулировки исправления</summary>")
             lines.append("")
@@ -315,7 +323,7 @@ def render_markdown(report: ReviewReport) -> str:
     if report.findings:
         lines.extend(
             f"{i}. [{f.id}](#{f.id.lower()}) ({SEVERITY_LABELS[f.severity].lower()}) "
-            f"— {_inline(f.recommendation)}"
+            f"— {_inline(f.title if f.document_gaps else f.recommendation)}"
             for i, f in enumerate(report.findings[:8], start=1)
         )
     else:
@@ -347,6 +355,7 @@ def render_json(report: ReviewReport, *, timings: dict[str, object] | None = Non
     if not report.failed_reviewers:
         del payload["failed_reviewers"]
     for finding in payload["findings"]:
+        del finding["document_gaps"]
         if not finding["origins"]:
             del finding["origins"]
         if not finding["external_references"]:

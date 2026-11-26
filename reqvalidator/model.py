@@ -137,6 +137,7 @@ class Finding:
     additional_recommendations: tuple[str, ...] = ()
     origins: tuple[ReviewOrigin, ...] = ()
     external_references: tuple[ExternalReference, ...] = ()
+    document_gaps: bool = False
 
 
 @dataclass(frozen=True, slots=True)
