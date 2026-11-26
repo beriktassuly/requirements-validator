@@ -16,22 +16,7 @@ Copy-Item .env.example .env
 
 ## Ключ и модель
 
-Получите свой ключ Gemini в Google AI Studio и заполните в `.env` поле `REQVALIDATOR_API_KEY`. В `.env.example` уже заданы проверенные параметры для Google API.
-
-```dotenv
-REQVALIDATOR_PROVIDER=compatible
-REQVALIDATOR_MODEL=gemini-2.5-flash
-REQVALIDATOR_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
-REQVALIDATOR_COMPATIBLE_FORMAT=json_schema
-REQVALIDATOR_MIN_REQUEST_INTERVAL=5
-REQVALIDATOR_CONCURRENCY=1
-```
-
-Последовательный контрольный прогон Gemini занял около 16 минут. Прогон с тремя одновременными запросами завершился за 7:43 с повторами HTTP 429 и 503 и частичным семантическим слиянием. Попытки с двумя и одним запросом шли следом на том же проекте и прервались из-за 429. Контрольный запрос подтвердил исчерпание суточной квоты проекта. Для оценки влияния параллельности нужен отдельный замер после сброса квоты. В примере задан один запрос за раз.
-
-На бесплатном тарифе даже один полный прогон такого PDF может исчерпать дневную квоту. В ответе на контрольный запрос Google указал лимит нашего проекта — 20 запросов в день для этой модели. Фактические лимиты своего проекта смотрите в Google AI Studio. При HTTP 429 и исчерпанной дневной квоте повторите после её сброса в полночь по тихоокеанскому времени. При лимите частоты увеличьте `REQVALIDATOR_MIN_REQUEST_INTERVAL`. При HTTP 503 попробуйте позже. [Получить Gemini-ключ](https://aistudio.google.com/apikey) · [Квоты Gemini](https://ai.google.dev/gemini-api/docs/rate-limits)
-
-Для прямого OpenAI поменяйте профиль в `.env` следующим образом. Вставьте ключ, созданный в собственном проекте OpenAI, и при необходимости замените пример модели на доступную.
+Основной профиль в `.env.example` использует OpenAI Responses. Заполните `OPENAI_API_KEY` в `.env` ключом своего проекта OpenAI. При необходимости укажите доступную вам модель. [Получить ключ OpenAI](https://platform.openai.com/api-keys)
 
 ```dotenv
 REQVALIDATOR_PROVIDER=openai
@@ -43,6 +28,22 @@ REQVALIDATOR_REASONING_EFFORT=medium
 REQVALIDATOR_MIN_REQUEST_INTERVAL=0
 REQVALIDATOR_CONCURRENCY=3
 ```
+
+### Альтернативный профиль Gemini
+
+Для Gemini задайте `REQVALIDATOR_API_KEY` в `.env` и примените настройки ниже. На нашем бесплатном проекте Google указал лимит 20 запросов в день на эту модель. Для банковского PDF в замере потребовалось около 26 вызовов модели даже без HTTP-повторов, поэтому квоты такого проекта не хватит для прохождения всех этапов. Для полного PDF используйте ключ платного проекта. Для бесплатного проекта возьмите более короткий документ и проверьте доступную квоту в Google AI Studio. [Получить ключ Gemini](https://aistudio.google.com/apikey) · [Квоты Gemini](https://ai.google.dev/gemini-api/docs/rate-limits)
+
+```dotenv
+REQVALIDATOR_PROVIDER=compatible
+REQVALIDATOR_MODEL=gemini-2.5-flash
+REQVALIDATOR_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+REQVALIDATOR_COMPATIBLE_FORMAT=json_schema
+REQVALIDATOR_REASONING_EFFORT=
+REQVALIDATOR_MIN_REQUEST_INTERVAL=5
+REQVALIDATOR_CONCURRENCY=1
+```
+
+При HTTP 429 проверьте, какой лимит исчерпан. Дневная квота сбрасывается в полночь по тихоокеанскому времени. При лимите частоты увеличьте `REQVALIDATOR_MIN_REQUEST_INTERVAL`.
 
 Для OpenAI Responses оставьте `REQVALIDATOR_SEED` пустым. Для reasoning-моделей оставьте `REQVALIDATOR_TEMPERATURE` пустым, если документация выбранной модели её не поддерживает. Для совместимого сервиса можно переключить `REQVALIDATOR_COMPATIBLE_FORMAT` на `json_object` или `prompt`, если endpoint не принимает строгую схему. Парсинг и валидация схемы на стороне агента остаются во всех режимах. Seed и temperature передаются только по явной настройке и при поддержке сервиса. Переменные среды имеют приоритет над `.env`. [Ключ OpenAI](https://platform.openai.com/api-keys) · [Рекомендации для актуальной модели](https://developers.openai.com/api/docs/guides/latest-model)
 
@@ -56,9 +57,9 @@ python -m reqvalidator input/requirements.pdf reports/review.md --json-output re
 
 Отчёт для сдачи получен версией `v1.0.0` (коммит `0fd8b02` из паспорта), через OpenAI Responses с моделью `gpt-6.2-sol`, без дополнительных ролей. [Отчёт Markdown](reports/submission.md) · [Данные JSON](reports/submission.json)
 
-Пример прогона с `--reviewers qa,api --external-docs` на коммите `f56a59c`. [Отчёт с дополнительными ролями](reports/pr3-openai-f56a59c/review.md)
+Пример прогона `v2.0.0` на том же PDF получен на коммите проверки `7a73ea2` с `gpt-6.2-sol` без дополнительных режимов анализа. Он занял **5:52** против примерно **12:30** у `v1.0.0`, дал **17/19** по семантической оценке и сохранил все **5/5** ключевых случаев. [Отчёт Markdown](reports/pr3-g13-fix/7a73ea2/pdf-1/review.md) · [Данные JSON](reports/pr3-g13-fix/7a73ea2/pdf-1/review.json) · [Оценка по эталону](reports/pr3-g13-fix/7a73ea2/pdf-1/semantic.json)
 
-Проверочный прогон Gemini на том же PDF выявил все четыре контрольных дефекта и дал больше замечаний и повторов.
+Пример прогона с `--reviewers qa,api --external-docs` на коммите `f56a59c`. [Отчёт с дополнительными ролями](reports/pr3-openai-f56a59c/review.md)
 
 Даже при одинаковом входном файле и настройках ответы модели могут различаться. При повторном прогоне могут измениться число и формулировки замечаний. Агент в каждом прогоне сверяет цитаты с исходным документом.
 
@@ -83,7 +84,8 @@ python -m reqvalidator input/requirements.pdf reports/sources.md --json-output r
 ```
 
 - `--progress` выводит в stderr начало и конец этапов, а также ход проверки пакетов. `--quiet` скрывает строки прогресса. `--timings` печатает итоговые замеры в stderr и добавляет поле `timings` в JSON при `--json-output`. Для эксперимента со слиянием задайте `--merge-reasoning-effort low`, если модель принимает это значение.
-- `--concurrency` или `REQVALIDATOR_CONCURRENCY` задаёт число одновременных запросов (1–8, без настройки — 3, в примере Gemini — 1). Интервал между вызовами SDK общий. Повторы HTTP внутри SDK учитываются отдельно. При параллельном запуске длительности пересекающихся этапов не складываются в общее время.
+- `--concurrency` или `REQVALIDATOR_CONCURRENCY` задаёт число одновременных запросов (1–8, по умолчанию — 3, для профиля Gemini выше — 1). Интервал между вызовами SDK общий. Повторы HTTP внутри SDK учитываются отдельно. При параллельном запуске длительности пересекающихся этапов не складываются в общее время.
+- `--debug-proposals PATH.json` сохраняет подтверждённые цитатами находки до слияния. Используйте отдельный путь для этого файла.
 - `--reviewers qa[,api]` добавляет проверку сценариев с неопределённым ожидаемым результатом (`qa`) и проверку явно описанного контракта (`api`). Каждая роль получает документ целиком, пока он помещается в её бюджет запроса, или обрабатывает пакеты существующих блоков. Если основной проход целиком невозможен, явно включённые роли всё равно проверяют документ, а отчёт отмечает неполное покрытие. `--reviewer-max-findings` ограничивает число находок за один запрос. Метки ревьюеров сохраняются при слиянии карточек. Если дополнительная роль завершится с ошибкой, отчёт отметит это в диагностике и в поле `failed_reviewers` в JSON. Покрытие основного анализа оценивается отдельно.
 - `--external-docs` проверяет явно указанные версии известных внешних библиотек и API. Для Context7 укажите `CONTEXT7_API_KEY`. Поиск передаёт только идентификатор известной технологии, версию и фиксированный технический вопрос. Ссылки и статусы находятся в `external_references`. Проверка конкретного утверждения доступна для поддерживаемых правил, например для значения `redirect_slashes` по умолчанию в FastAPI. Если источник недоступен или обслужил другую версию, это отражается в статусе.
 
