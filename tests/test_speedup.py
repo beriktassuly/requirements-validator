@@ -13,7 +13,7 @@ from reqvalidator.config import ConfigurationError, Settings
 from reqvalidator.document import load_document
 from reqvalidator.ground import deduplicate
 from reqvalidator.llm import ReviewError
-from reqvalidator.model import Anchor, Finding, LocalResponse
+from reqvalidator.model import Anchor, Finding, LocalResponse, MergeResponse
 from reqvalidator.report import render_json, render_markdown
 from reqvalidator.review import ReviewEngine
 from reqvalidator.timing import RunTimings
@@ -127,6 +127,23 @@ def test_timings_counters_survive_threads() -> None:
 def _finding(block: str, title: str, recommendation: str, line: int) -> Finding:
     anchor = Anchor(block, title, line, line, 1, len(title), None, None)
     return Finding("completeness", "minor", title, "Описание.", recommendation, None, (), (anchor,), ("set",))
+
+
+def test_both_failed_merge_passes_emit_one_warning() -> None:
+    class UnavailableMergeReviewer(ScriptedReviewer):
+        def ask(self, system, prompt, schema):
+            assert schema is MergeResponse
+            self.calls[schema.__name__] += 1
+            raise ReviewError("HTTP 429", fatal=True)
+
+    first = replace(_finding("B001", "Нет порога", "Указать порог.", 1), severity="critical")
+    second = replace(first, title="Нет режима отправки", description="Нужно определить момент отправки.")
+    reviewer = UnavailableMergeReviewer()
+    warnings: list[str] = []
+    findings = ReviewEngine(reviewer).consolidate([first, second], warnings)
+    assert reviewer.calls["MergeResponse"] == 2
+    assert len(findings) == 2
+    assert warnings == ["Семантическое слияние выполнено частично. Точные дубли удалены кодом."]
 
 
 def test_forced_pairs_merge_without_shared_blocks() -> None:

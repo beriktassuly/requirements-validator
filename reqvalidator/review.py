@@ -37,6 +37,7 @@ T = TypeVar("T", bound=BaseModel)
 I = TypeVar("I")
 U = TypeVar("U")
 UTC_PLUS_FIVE = timezone(timedelta(hours=5))
+MERGE_WARNING = "Семантическое слияние выполнено частично. Точные дубли удалены кодом."
 MISSING_ADMIN = re.compile(
     r"не заполнен[аоы]?|не указана?|не проставлен[аоы]?|заполня[а-я]+ тестировщиками|"
     r"not filled|not specified|\btbd\b",
@@ -464,8 +465,8 @@ class ReviewEngine:
                     answers.append((batch, outcome))
                 else:
                     failed = True
-        if failed:
-            warnings.append("Семантическое слияние выполнено частично. Точные дубли удалены кодом.")
+        if failed and MERGE_WARNING not in warnings:
+            warnings.append(MERGE_WARNING)
         merged: list[tuple[int, int]] = []
         for batch, answer in answers:
             allowed = set(batch)
@@ -494,14 +495,11 @@ class ReviewEngine:
     def _clarify(self, source: str, targets: dict[str, str]) -> dict[str, str | None]:
         if not targets:
             return {}
-        try:
-            answer = self._call(
-                prompts.CLARIFY, _dumps(targets) + "\n\nДокумент JSON:\n" + source,
-                ClarificationResponse,
-                lambda result: sorted(item.target for item in result.items) == sorted(targets),
-            )
-        except (ReviewError, ReviewLimitError):
-            return {}
+        answer = self._call(
+            prompts.CLARIFY, _dumps(targets) + "\n\nДокумент JSON:\n" + source,
+            ClarificationResponse,
+            lambda result: sorted(item.target for item in result.items) == sorted(targets),
+        )
         return {
             item.target: None if item.resolved else (item.question or "").strip() or targets[item.target]
             for item in answer.items
@@ -758,8 +756,13 @@ class ReviewEngine:
             f"связь/{check.relation}": f"Как согласовать {prompts.RELATION_LABELS[check.relation]}?"
             for check in link_checks if check.status == "uncertain"
         })
+        resolved: dict[str, str | None] = {}
         with self._stage("clarify"):
-            resolved = self._clarify(source, targets) if complete and not call_blocked else {}
+            if complete and not call_blocked:
+                try:
+                    resolved = self._clarify(source, targets)
+                except (ReviewError, ReviewLimitError):
+                    warnings.append("Уточнение не выполнено.")
 
         def clarify_status(item: T, key: str) -> T:
             if key in resolved and resolved[key] is None:
@@ -773,10 +776,8 @@ class ReviewEngine:
         ]
         set_checks = tuple(clarify_status(check, f"набор/{check.criterion}") for check in set_checks)
         link_checks = tuple(clarify_status(check, f"связь/{check.relation}") for check in link_checks)
-        questions = tuple(
-            (key, question) for key, fallback in targets.items()
-            if complete and (question := resolved.get(key, fallback)) is not None
-        )
+        questions = tuple((key, question) for key in targets if (question := resolved.get(key)) is not None)
+        readiness_confirmed = complete and len(resolved) == len(targets) and not questions
         external_references = None
         if self.external_docs:
             with self._stage("external_docs"):
@@ -790,7 +791,7 @@ class ReviewEngine:
             reviewed_at=datetime.now(UTC_PLUS_FIVE).isoformat(timespec="seconds"),
             model=model, provider=provider, version=version,
             requirements=tuple(results), set_checks=set_checks, link_checks=link_checks,
-            findings=unique, readiness=assess_readiness(unique, complete and not questions),
+            findings=unique, readiness=assess_readiness(unique, readiness_confirmed),
             coverage_complete=complete, discarded_proposals=discarded,
             merged_proposals=len(findings) - len(unique), failed_stages=failed_stages,
             warnings=tuple(warnings),

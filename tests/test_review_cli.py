@@ -193,6 +193,39 @@ def test_uncertainty_has_question_without_marking_coverage_incomplete(tmp_path: 
     assert "Вопросы к аналитику" in rendered and "Как измерять задержку?" in rendered
 
 
+def test_failed_clarification_keeps_uncertainty_without_inventing_questions(tmp_path: Path) -> None:
+    from reqvalidator.llm import ReviewError
+    from reqvalidator.model import ClarificationResponse, LocalResponse, SetResponse
+
+    class UnavailableClarificationReviewer(ScriptedReviewer):
+        def ask(self, system, prompt, schema):
+            if schema is ClarificationResponse:
+                raise ReviewError("HTTP 429", fatal=True)
+            response = super().ask(system, prompt, schema)
+            if schema is LocalResponse:
+                for item in response.items:
+                    item.findings = []
+                    for check in item.checks:
+                        check.status = "uncertain" if check.criterion == "verifiability" else "pass"
+            if schema is SetResponse:
+                response.findings = []
+                for check in response.checks:
+                    check.status = "pass"
+            return response
+
+    source = write_rule_fixture(tmp_path / "input.md")
+    report = ReviewEngine(UnavailableClarificationReviewer()).run(
+        load_document(source), model="offline", provider="offline", version="test",
+    )
+    rendered = render_markdown(report)
+    assert report.coverage_complete and report.failed_stages == 0
+    assert report.readiness == Readiness("not_confirmed", "not_confirmed")
+    assert report.clarifications == ()
+    assert "Оценок, которые требуют уточнения — 2." in rendered
+    assert "Вопросы к аналитику" not in rendered
+    assert rendered.split("## Диагностика", 1)[1].count("Уточнение не выполнено.") == 1
+
+
 def test_markdown_lists_cited_context_outside_requirement_registry(tmp_path: Path) -> None:
     from reqvalidator.segment import Block
 

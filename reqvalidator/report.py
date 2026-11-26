@@ -115,6 +115,13 @@ def render_markdown(report: ReviewReport) -> str:
 
     severity_counts = Counter(f.severity for f in report.findings)
     critical = [f for f in report.findings if f.severity == "critical"]
+    uncertain_count = 0
+    if report.coverage_complete:
+        uncertain_count = (
+            sum(check.status == "uncertain" for row in report.requirements for check in row.checks)
+            + sum(check.status == "uncertain" for check in report.set_checks)
+            + sum(check.status == "uncertain" for check in report.link_checks)
+        )
     lines = [
         "# Отчёт о проверке требований",
         "",
@@ -138,7 +145,7 @@ def render_markdown(report: ReviewReport) -> str:
         f"- Подтверждено уникальных замечаний — {len(report.findings)}.",
         f"- Критические — {severity_counts['critical']}, существенные — {severity_counts['major']}, "
         f"незначительные — {severity_counts['minor']}.",
-        f"- Оценок, которые требуют уточнения — {len(report.clarifications)}.",
+        f"- Оценок, которые требуют уточнения — {uncertain_count}.",
         f"- Покрытие проверок — {'полное' if report.coverage_complete else 'неполное'}.",
         "",
         "### Критические дефекты",
