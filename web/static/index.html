@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Локальная проверка требований и просмотр замечаний с цитатами из документа.">
+  <title>Requirements Validator</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <link rel="stylesheet" href="/static/report.css">
+  <script src="/static/report-viewer.js" defer></script>
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#workspace">К содержимому</a>
+  <header class="app-bar">
+    <div class="app-bar-inner">
+      <div class="app-brand">
+        <span class="brand-icon" aria-hidden="true"></span>
+        <span>Requirements Validator</span>
+      </div>
+      <nav class="app-nav" aria-label="Рабочее пространство">
+        <button id="add-demo-source" class="button button-quiet" type="button" hidden>Добавить исходный PDF</button>
+        <input id="demo-source-input" type="file" accept=".pdf" hidden>
+        <button id="return-to-run" class="button button-quiet" type="button" hidden>Ход проверки</button>
+        <button id="return-home" class="button button-secondary" type="button" hidden>К запуску</button>
+      </nav>
+    </div>
+  </header>
+  <p id="app-alert" class="app-alert" role="alert" hidden></p>
+  <main id="workspace" tabindex="-1"></main>
+  <noscript><p class="app-alert">Включите JavaScript для просмотра и запуска проверок.</p></noscript>
+
+  <template id="landing-template">
+    <section class="landing page-width" aria-labelledby="landing-title">
+      <header class="landing-heading">
+        <h1 id="landing-title" tabindex="-1">Проверка требований</h1>
+        <p>Откройте готовый отчёт или запустите проверку. Каждое замечание содержит цитаты, по которым можно свериться с исходным документом.</p>
+      </header>
+      <section id="resume-card" class="resume-card" hidden aria-labelledby="resume-title">
+        <div><h2 id="resume-title">Последняя проверка</h2><p id="resume-name"></p></div>
+        <button id="resume-run" class="button button-secondary" type="button">Показать состояние</button>
+      </section>
+      <div class="landing-grid">
+        <section class="work-card demo-card" aria-labelledby="demo-title">
+          <div class="demo-label"><span aria-hidden="true"></span> Доступно без ключа</div>
+          <h2 id="demo-title">Банковское ТЗ</h2>
+          <p>Готовый отчёт по банковскому PDF. Изучите вердикты, отфильтруйте замечания и откройте цитаты.</p>
+          <div class="demo-actions">
+            <button id="open-demo" class="button button-primary" type="button">Открыть пример</button>
+            <button id="play-demo" class="button button-secondary" type="button" aria-describedby="replay-hint" disabled>Воспроизвести прогон</button>
+          </div>
+          <p id="replay-hint" class="field-help">Проверяем наличие записи прогона…</p>
+          <p id="demo-error" class="inline-error" role="alert" hidden></p>
+        </section>
+        <section class="work-card analysis-card" aria-labelledby="new-title">
+          <div class="card-heading">
+            <h2 id="new-title">Новый анализ</h2>
+            <span id="configuration-status" class="configuration-status" role="status">Проверяем настройки…</span>
+          </div>
+          <form id="analysis-form">
+            <div id="drop-zone" class="drop-zone">
+              <span class="document-icon" aria-hidden="true"></span>
+              <p id="file-name" class="file-name">Перетащите документ сюда</p>
+              <p id="file-formats" class="field-help">PDF, DOCX, MD или TXT</p>
+              <input id="document-input" type="file" accept=".pdf,.docx,.md,.txt" hidden>
+              <div class="file-actions">
+                <button id="choose-file" class="button button-secondary" type="button" aria-describedby="file-formats">Выбрать файл</button>
+                <button id="clear-file" class="button button-quiet" type="button" hidden>Убрать файл</button>
+              </div>
+            </div>
+            <div class="form-settings">
+              <div class="profile-field">
+                <span class="field-label">Профиль сервера</span>
+                <p id="provider-profile" class="profile-value">—</p>
+              </div>
+              <label class="concurrency-field" for="concurrency">
+                <span class="field-label">Параллельные пакеты</span>
+                <select id="concurrency" aria-describedby="concurrency-hint">
+                  <option value="1" selected>1</option><option value="2">2</option>
+                  <option value="3">3</option><option value="4">4</option>
+                  <option value="5">5</option><option value="6">6</option>
+                  <option value="7">7</option><option value="8">8</option>
+                </select>
+              </label>
+            </div>
+            <p id="concurrency-hint" class="field-help concurrency-hint">Число одновременно проверяемых локальных пакетов.</p>
+            <label class="consent" for="consent">
+              <input id="consent" type="checkbox">
+              <span>Провайдер получит текст документа. За анализ могут списать средства. Я согласен отправить документ на проверку.</span>
+            </label>
+            <p id="upload-error" class="inline-error" role="alert" hidden></p>
+            <div class="form-footer">
+              <button id="start-run" class="button button-primary" type="submit" disabled>Запустить анализ</button>
+              <p id="start-hint" class="field-help" aria-live="polite"></p>
+            </div>
+          </form>
+        </section>
+        <section class="work-card imported-card" aria-labelledby="import-title">
+          <h2 id="import-title">Уже есть отчёт?</h2>
+          <p>Откройте сохранённый JSON без загрузки файла на сервер.</p>
+          <button id="import-json" class="button button-secondary" type="button">Открыть JSON</button>
+          <input id="json-input" type="file" accept=".json,application/json" hidden>
+          <p id="import-error" class="inline-error" role="alert" hidden></p>
+        </section>
+      </div>
+    </section>
+  </template>
+
+  <template id="run-template">
+    <section class="progress-view page-width" aria-labelledby="progress-title">
+      <header class="progress-heading">
+        <div>
+          <p class="heading-label">Ход проверки</p>
+          <h1 id="progress-title" tabindex="-1">Анализ документа</h1>
+          <p id="run-state" class="state-chip">Ожидаем состояние проверки</p>
+        </div>
+        <div class="progress-actions">
+          <button id="open-run-report" class="button button-primary" type="button" hidden>Открыть отчёт</button>
+          <button id="cancel-run" class="button button-secondary" type="button" hidden>Остановить</button>
+        </div>
+      </header>
+      <p id="run-notice" class="run-notice" role="status" hidden></p>
+      <p id="run-error" class="inline-error run-notice" role="alert" hidden></p>
+      <div class="progress-grid">
+        <section class="work-card stage-card" aria-labelledby="stage-title">
+          <h2 id="stage-title">Этапы проверки</h2>
+          <p id="current-stage" class="current-stage" role="status">Ожидаем запуск</p>
+          <ol id="stage-list" class="stage-list"></ol>
+        </section>
+        <section class="work-card measures-card" aria-labelledby="measure-title">
+          <h2 id="measure-title">Ход работы</h2>
+          <dl class="live-stats">
+            <div><dt>Прошло</dt><dd id="run-elapsed">—</dd></div>
+            <div><dt>Проверено локальных пакетов</dt><dd id="run-packages">—</dd></div>
+            <div id="run-estimate-row" hidden><dt>Остаток локальных пакетов</dt><dd id="run-estimate">—</dd></div>
+          </dl>
+          <div id="run-progress-track" class="progress-track" hidden>
+            <progress id="run-progress" aria-label="Проверено локальных пакетов"></progress>
+          </div>
+          <details id="final-timings" class="work-details" hidden>
+            <summary>Итоговые замеры</summary>
+            <dl id="timings-list" class="timings-list"></dl>
+          </details>
+        </section>
+      </div>
+      <details class="work-card work-details journal">
+        <summary>Журнал проверки</summary>
+        <p id="run-log-empty" class="field-help">События появятся после запуска.</p>
+        <ol id="run-log" class="event-log" aria-label="События проверки" tabindex="0" hidden></ol>
+      </details>
+    </section>
+  </template>
+
+  <template id="replay-template">
+    <section class="progress-view page-width" aria-labelledby="replay-title">
+      <header class="progress-heading">
+        <div>
+          <p class="heading-label">Запись прогона</p>
+          <h1 id="replay-title" tabindex="-1">Банковское ТЗ</h1>
+          <p id="replay-start" class="replay-start"></p>
+        </div>
+        <button id="replay-report" class="button button-primary" type="button">Перейти к отчёту</button>
+      </header>
+      <section class="work-card replay-card" aria-labelledby="replay-journal">
+        <div class="replay-controls">
+          <div><h2 id="replay-journal">Журнал проверки</h2><p id="replay-time" class="field-help"></p></div>
+          <div class="replay-actions">
+            <label for="replay-rate">Скорость</label>
+            <select id="replay-rate"><option value="1">1×</option><option value="4">4×</option><option value="12" selected>12×</option><option value="30">30×</option></select>
+            <button id="replay-toggle" class="button button-secondary" type="button">Пауза</button>
+          </div>
+        </div>
+        <p id="replay-notice" class="field-help" role="status"></p>
+        <ol id="replay-log" class="event-log" aria-label="События записи" tabindex="0"></ol>
+      </section>
+    </section>
+  </template>
+</body>
+</html>

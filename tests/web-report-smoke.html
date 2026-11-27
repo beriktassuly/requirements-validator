@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Проверка просмотрщика Requirements Validator</title>
+  <link rel="stylesheet" href="../web/static/report.css">
+</head>
+<body>
+  <h1>Проверка на синтетических данных</h1>
+  <p id="results" role="status"></p>
+  <section id="fixture"></section>
+  <script src="../web/static/report-viewer.js"></script>
+  <script>
+    const fixture = document.getElementById("fixture");
+    const results = document.getElementById("results");
+    const hash = "a".repeat(64);
+    const quote = "😀Бета\n\nЖу 🐾";
+    const markup = "<em id='web-test-marker'>Текст</em>";
+    const anchor = {
+      block_id: "B001", quote, start_line: 1, end_line: 3,
+      start_col: 2, end_col: 4, page_start: 1, page_end: 2,
+    };
+    const source = {
+      sha256: hash,
+      lines: [
+        {number: 1, text: "А😀Бета", page: 1},
+        {number: 2, text: "", page: 1},
+        {number: 3, text: "Жу 🐾 конец", page: 2},
+        {number: 4, text: markup, page: 2},
+      ],
+    };
+    const finding = {
+      id: "F001", criterion: "ambiguity", severity: "critical", title: "Уточнить формулировку",
+      description: markup, evidence: [anchor], recommendation: "Указать ожидаемый результат.",
+    };
+    const report = {
+      schema_version: 1,
+      document: {name: "Проверка.pdf", format: "pdf", sha256: hash, line_count: 4, page_count: 2},
+      readiness: {development: "conditional", testing: "not_ready"},
+      findings: [finding, {...finding, id: "F002", severity: "minor", title: "Второе замечание", evidence: []}],
+      coverage_complete: true,
+    };
+    function assert(condition, message) {
+      if (!condition) throw new Error(message);
+    }
+    function mount(currentReport, currentSource) {
+      fixture.replaceChildren();
+      RequirementsReport.mount(fixture, {report: currentReport, source: currentSource});
+    }
+    function selectQuote() {
+      fixture.querySelector(".rv-card-title").click();
+      const button = [...fixture.querySelectorAll("button")]
+        .find(item => item.textContent.trim().startsWith("Показать цитату"));
+      assert(button, "Кнопка перехода к цитате");
+      button.click();
+    }
+    try {
+      mount(report, source);
+      assert(!fixture.querySelector("#web-test-marker"), "HTML из полей должен остаться текстом");
+      assert(fixture.textContent.includes(markup), "Разметка отображается дословно");
+      selectQuote();
+      assert(fixture.querySelector('[data-line="1"] mark')?.textContent === "😀Бета", "Начальная колонка Unicode");
+      assert(fixture.querySelector('[data-line="3"] mark')?.textContent === "Жу 🐾", "Конечная колонка Unicode");
+
+      const severity = fixture.querySelector('[aria-label="Серьёзность"]');
+      severity.value = "minor";
+      severity.dispatchEvent(new Event("change", {bubbles: true}));
+      assert(fixture.querySelector(".rv-card").hidden, "Фильтр скрывает замечание другой серьёзности");
+
+      const wrongAnchor = {...anchor, end_col: 3};
+      mount({...report, findings: [{...finding, evidence: [wrongAnchor]}]}, source);
+      selectQuote();
+      assert(!fixture.querySelector("mark"), "Нельзя подсвечивать несовпадающие координаты");
+      assert(fixture.querySelector("blockquote")?.textContent.includes(quote), "Дословная цитата при ошибке координат");
+
+      mount(report, {...source, sha256: "b".repeat(64)});
+      assert(!fixture.querySelector("mark"), "Нельзя подсвечивать исходник с другим SHA-256");
+      assert(fixture.querySelector("blockquote")?.textContent.includes(quote), "Дословная цитата при несовпадении SHA-256");
+
+      mount(report, null);
+      assert(fixture.querySelector("blockquote")?.textContent.includes(quote), "Дословная цитата в JSON без исходника");
+      results.textContent = "Проверки просмотрщика пройдены.";
+    } catch (error) {
+      results.textContent = "Ошибка проверки — " + error.message;
+      throw error;
+    }
+  </script>
+</body>
+</html>

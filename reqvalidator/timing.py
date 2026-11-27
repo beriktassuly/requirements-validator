@@ -10,6 +10,7 @@ from time import monotonic
 from typing import Literal
 
 RetryKind = Literal["format", "coverage", "validation"]
+ProgressObserver = Callable[[dict[str, object]], None]
 
 _STAGE_LABELS = {
     "extract": "извлечение текста",
@@ -35,6 +36,7 @@ class RunTimings:
     """
 
     progress: Callable[[str], None] | None = None
+    observer: ProgressObserver | None = field(default=None, kw_only=True, repr=False, compare=False)
     started_at: float = field(default_factory=monotonic, init=False)
     stages: dict[str, float] = field(default_factory=dict, init=False)
     model_calls: int = field(default=0, init=False)
@@ -60,6 +62,10 @@ class RunTimings:
         if self.progress is not None:
             self.progress(f"[{monotonic() - self.started_at:6.1f} с] {message}")
 
+    def _observe(self, message: str, **event: object) -> None:
+        if self.observer is not None:
+            self.observer({"elapsed": monotonic() - self.started_at, "text": message, **event})
+
     @contextmanager
     def stage(self, stage: str) -> Iterator[float]:
         label = _STAGE_LABELS[stage]
@@ -67,6 +73,7 @@ class RunTimings:
         started = monotonic()
         with self._lock:
             self._active_stages.append((stage, started))
+        self._observe(f"Начато: {label}.", kind="stage", stage=stage, label=label, state="running")
         outcome = "Завершено"
         try:
             yield started
@@ -78,7 +85,27 @@ class RunTimings:
             with self._lock:
                 self._active_stages.pop()
                 self.stages[stage] = self.stages.get(stage, 0.0) + duration
-            self._emit(f"{outcome}: {label} ({duration:.1f} с).")
+            message = f"{outcome}: {label} ({duration:.1f} с)."
+            self._emit(message)
+            self._observe(message, kind="stage", stage=stage, label=label,
+                          state="completed" if outcome == "Завершено" else "failed")
+
+    @contextmanager
+    def parallel_stage(self, stage: str) -> Iterator[None]:
+        label = _STAGE_LABELS[stage]
+        started = monotonic()
+        self._observe(f"Начато: {label}.", kind="background", stage=stage, state="running")
+        outcome = "Завершено"
+        try:
+            yield
+        except BaseException:
+            outcome = "Прервано"
+            raise
+        finally:
+            duration = monotonic() - started
+            self.record_stage(stage, duration)
+            self._observe(f"{outcome}: {label} ({duration:.1f} с).", kind="background", stage=stage,
+                          state="completed" if outcome == "Завершено" else "failed")
 
     def record_stage(self, stage: str, duration: float) -> None:
         with self._lock:
@@ -87,6 +114,8 @@ class RunTimings:
     def local_batch(self, completed: int, total: int, started: float) -> None:
         remaining_minutes = (monotonic() - started) * (total - completed) / completed / 60
         self._emit(f"Обработано {completed} из {total} пакетов, осталось ~{remaining_minutes:.1f} мин.")
+        self._observe(f"Обработано {completed} из {total} локальных пакетов.", kind="batch",
+                      processed=completed, total=total, remaining=remaining_minutes)
 
     @contextmanager
     def model_call(self, *, measured_transport: bool) -> Iterator[None]:
