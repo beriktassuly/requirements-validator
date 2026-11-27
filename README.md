@@ -38,6 +38,8 @@ Copy-Item .env.example .env
 
 ## Примеры отчётов
 
+[Смотреть демо для жюри на YouTube (1:57)](https://www.youtube.com/watch?v=CA1ExNlqkBc). Проверка банковского ТЗ в CLI, переходы к цитатам и экспорт HTML в веб-интерфейсе.
+
 | Прогон | Версия | Отчёт |
 |---|---|---|
 | Для сдачи — `v2.0.0`, OpenAI без дополнительных режимов, 5:52 | `7a73ea2` в паспорте | [Markdown](reports/submission.md) · [JSON](reports/submission.json) · [Оценка](reports/pr3-g13-fix/7a73ea2/pdf-1/semantic.json) |
