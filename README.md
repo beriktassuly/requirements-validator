@@ -4,6 +4,12 @@
 
 CLI проверяет ТЗ в PDF, Markdown, DOCX и TXT и формирует отчёт на русском с цитатами и координатами. Рубрика охватывает отдельные требования и связи внутри документа. [Задание](https://github.com/BCC-HUB/ai-requirements-validator-task#readme) · [Архитектурные решения](docs/DECISIONS.md)
 
+## Демо и презентация
+
+[Смотреть демо на YouTube (1:57)](https://www.youtube.com/watch?v=CA1ExNlqkBc) · [Открыть презентацию (PDF)](docs/requirements-validator-pitch.pdf)
+
+На видео — проверка банковского ТЗ в CLI, переходы к цитатам и экспорт HTML. В презентации — кейс, архитектура и результаты.
+
 ## Веб-интерфейс
 
 Из корня проекта запустите Docker Compose.
@@ -37,8 +43,6 @@ Copy-Item .env.example .env
 Результат сохраняется в `reports/review.md`, данные для оценщика — в `reports/review.json`. Каталог создаётся автоматически.
 
 ## Примеры отчётов
-
-[Смотреть демо для жюри на YouTube (1:57)](https://www.youtube.com/watch?v=CA1ExNlqkBc). Проверка банковского ТЗ в CLI, переходы к цитатам и экспорт HTML в веб-интерфейсе.
 
 | Прогон | Версия | Отчёт |
 |---|---|---|
