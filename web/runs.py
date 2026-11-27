@@ -166,7 +166,7 @@ class Runs:
                 if job.cancelling:
                     return
                 process = subprocess.Popen(
-                    [sys.executable, "-m", "web.worker", str(source), str(job.folder), str(concurrency)],
+                    [sys.executable, "-X", "utf8", "-m", "web.worker", str(source), str(job.folder), str(concurrency)],
                     cwd=self.root, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                     encoding="utf-8", errors="replace", shell=False,
                 )

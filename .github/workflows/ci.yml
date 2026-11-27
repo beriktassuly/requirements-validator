@@ -36,5 +36,5 @@ jobs:
         run: |
           trap 'docker compose down' EXIT
           docker compose up -d --build
-          curl --fail --silent --show-error --retry 15 --retry-connrefused --retry-delay 1 http://localhost:8000/api/config
+          curl --fail --silent --show-error --retry 15 --retry-all-errors --retry-delay 1 --max-time 3 http://127.0.0.1:8000/api/config
           python -m unittest tests.web_http_smoke -v
