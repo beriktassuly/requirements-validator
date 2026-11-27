@@ -6,7 +6,6 @@ from contextlib import AbstractContextManager, nullcontext
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from itertools import combinations
-from time import monotonic
 import json
 import re
 from typing import TypeVar
@@ -643,12 +642,8 @@ class ReviewEngine:
         set_future: Future[SetResponse] | None = None
         if main_fits and self._pool is not None:
             def check_set() -> SetResponse:
-                started = monotonic()
-                try:
+                with self.timings.parallel_stage("set_model") if self.timings is not None else nullcontext():
                     return self._call(prompts.SET, prompts.set_input(source), SetResponse, _set_valid)
-                finally:
-                    if self.timings is not None:
-                        self.timings.record_stage("set_model", monotonic() - started)
 
             set_future = self._pool.submit(check_set)
         with self._stage("local") as local_started:

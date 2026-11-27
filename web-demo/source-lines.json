@@ -1,0 +1,1388 @@
+{
+  "name": "requirements.pdf",
+  "format": "pdf",
+  "sha256": "fd95de7df322d7a0597fbab6761af836c504e5e2220f54b144f9cbe3ff0e873a",
+  "lines": [
+    {
+      "number": 1,
+      "text": "# Уведомление о расходах по карте",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 2,
+      "text": "",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 3,
+      "text": "Комплект из двух исходных документов. Текст требований не вычитывался и не исправлялся.",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 4,
+      "text": "Часть B — дочерняя спецификация, на которую ссылается раздел интеграции в части A.",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 5,
+      "text": "",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 6,
+      "text": "---",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 7,
+      "text": "",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 8,
+      "text": "## Часть A. Новый функционал",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 9,
+      "text": "",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 10,
+      "text": "### Общие сведения",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 11,
+      "text": "",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 12,
+      "text": "| Поле | Значение |",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 13,
+      "text": "| :--- | :--- |",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 14,
+      "text": "| **Наименование задачи** | Месячный порог расходов по карте |",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 15,
+      "text": "| **Продукт** | Мобильный банк, учебный кейс |",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 16,
+      "text": "| **Бизнес-процесс** | Информирование держателя карты |",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 17,
+      "text": "| **Business owner / Product owner / Аналитик** | Учебные роли розничного бизнеса, владельца мобильного банка и аналитика команды |",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 18,
+      "text": "| **Тип работы** | Новый функционал |",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 19,
+      "text": "| **Влияние на ИС** | Мобильный банк, карточный процессинг, сервис уведомлений |",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 20,
+      "text": "| **Задача в JIRA** | Практикум без Jira-задачи |",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 21,
+      "text": "",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 22,
+      "text": "### Цели",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 23,
+      "text": "Дать клиенту возможность узнать о достижении личного бюджета в момент покупки.",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 24,
+      "text": "",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 25,
+      "text": "### Архитектура решения",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 26,
+      "text": "Мобильное приложение → сервис настроек. Карточный процессинг → учёт расходов → сервис push.",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 27,
+      "text": "",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 28,
+      "text": "### Дизайн процесса UI",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 29,
+      "text": "Карты → Расходы → Уведомления. На экране видны переключатель, поле «Порог, ₸», сумма за месяц и кнопка «Сохранить». При ошибке ввода сообщение появляется под полем.",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 30,
+      "text": "",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 31,
+      "text": "### Требования к изменениям",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 32,
+      "text": "",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 33,
+      "text": "#### BPMN схема процесса",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 34,
+      "text": "Проведение покупки → пересчёт расходов → проверка порога → при достижении отправка push → завершение.",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 35,
+      "text": "",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 36,
+      "text": "#### Функциональные требования",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 37,
+      "text": "* **Ф-1.** Держатель активной карты KZT задаёт целый порог от 1 000 до 1 000 000 ₸ включительно. По умолчанию уведомление выключено.",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 38,
+      "text": "* **Ф-2.** Месяц определяется по дате совершения покупки в Алматы. В расходы входят проведённые покупки. Возврат уменьшает расходы месяца исходной покупки. Переводы и снятие наличных исключаются.",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 39,
+      "text": "* **Ф-3.** Когда расходы переходят от суммы ниже порога к сумме, равной порогу или выше, клиент получает push. На карту приходится максимум один такой push за календарный месяц.",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 40,
+      "text": "* **Ф-4.** При изменении порога накопленная сумма сохраняется. Если она ниже нового порога, следующее достижение вызывает push независимо от истории предыдущей настройки.",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 41,
+      "text": "",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 42,
+      "text": "### Sequence Diagram",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 43,
+      "text": "Процессинг → сервис расходов: проведена покупка. Сервис расходов → настройки: получить порог карты. Сервис расходов → push: передать последние четыре цифры карты и сумму при достижении порога.",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 44,
+      "text": "",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 45,
+      "text": "### Нефункциональные требования",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 46,
+      "text": "Сервис передаёт push на отправку в течение минуты после получения события.",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 47,
+      "text": "",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 48,
+      "text": "### Требования к данным",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 49,
+      "text": "Хранить идентификатор карты, месяц, идентификатор операции, сумму покупки в тиынах, признак отправки и порог в тенге.",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 50,
+      "text": "",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 51,
+      "text": "### Требования к интеграции",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 52,
+      "text": "Приложение читает и сохраняет настройки через дочерний документ «Уведомление о расходах по карте — REST API». Повторная доставка одного события процессинга сохраняет исходный итог.",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 53,
+      "text": "",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 54,
+      "text": "### Требования к тестированию",
+      "page": 1,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 55,
+      "text": "#### Тестирование требований",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 56,
+      "text": "заполняются тестировщиками",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 57,
+      "text": "",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 58,
+      "text": "### Критерии приемки",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 59,
+      "text": "",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 60,
+      "text": "| Исходные условия | Действие | Ожидаемый результат |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 61,
+      "text": "| :--- | :--- | :--- |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 62,
+      "text": "| Расходы 48 500 ₸, порог 50 000 ₸ | Провести покупку на 1 500 ₸ | Итог 50 000 ₸ и один push |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 63,
+      "text": "| Покупка 31 января в 23:58 на 4 000 ₸ | Провести 1 февраля в 00:03 по Алматы | Февральский счётчик вырос на 4 000 ₸ |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 64,
+      "text": "| Расходы 19 900 ₸, порог 20 000 ₸ | Перевести 500 ₸ | Счётчик показывает 19 900 ₸ |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 65,
+      "text": "",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 66,
+      "text": "### Ревью требований",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 67,
+      "text": "Документ (версия/дата) в источнике не заполнен. Пункты чек-листа приведены как в шаблоне, отметки не проставлены.",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 68,
+      "text": "",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 69,
+      "text": "| Проверка | Создано или доступно | Проверено | Примечания |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 70,
+      "text": "| :--- | :--- | :--- | :--- |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 71,
+      "text": "| Техническое требование зафиксировано и покрывает бизнес-требование | Да / Нет | Да / Нет | |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 72,
+      "text": "| Функциональная спецификация имеет структурированное описание (по стандарту, шаблону) | Да / Нет | Да / Нет | |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 73,
+      "text": "| Sequence-диаграммы, предусмотрены взаимодействия систем, компонентов и решений | Да / Нет / Не требуется | Да / Нет / Не требуется | |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 74,
+      "text": "| Требование покрывает спецификацию UX/UI дизайна | Да / Нет / Не требуется | Да / Нет / Не требуется | |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 75,
+      "text": "| Реализация задачи/проекта предусматривает схему отката решений | Да / Нет / Не требуется | Да / Нет / Не требуется | При невозможности отката — варианты скрытия функционала |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 76,
+      "text": "| Требование может быть протестировано | Да / Нет | Да / Нет | |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 77,
+      "text": "| Требование предусматривает модель данных или поток, содержит описание | Да / Нет / Не требуется | Да / Нет / Не требуется | |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 78,
+      "text": "| Требование не имеет противоречий или явных показателей операционных рисков | Да / Нет | Да / Нет | |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 79,
+      "text": "| Требование содержит архитектуру и согласовано с архитекторами | Да / Нет / Не требуется | Да / Нет / Не требуется | Для архитектуры — чек-лист |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 80,
+      "text": "| Все изменения, влияющие на иные продукты/системы в требовании, согласованы с ответственными лицами | Да / Нет / Не требуется | Да / Нет / Не требуется | |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 81,
+      "text": "| Структура требований не несёт изменений и рисков информационной безопасности | Да / Нет | Да / Нет | По информационной безопасности — чек-лист |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 82,
+      "text": "| В требовании присутствует схема полного бизнес-процесса и часть реализуемой доработки | Да / Нет | Да / Нет | |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 83,
+      "text": "| Требование носит интеграционный характер и имеет четкую постановку реализации интеграционного взаимодействия | Да / Нет / Не требуется | Да / Нет / Не требуется | |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 84,
+      "text": "| Поддерживается версионность документа / зафиксирована | Да / Нет | Да / Нет | |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 85,
+      "text": "",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 86,
+      "text": "### Блок согласующих",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 87,
+      "text": "",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 88,
+      "text": "| Подразделение | ФИО ответственного | Подпись |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 89,
+      "text": "| :--- | :--- | :--- |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 90,
+      "text": "| | | |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 91,
+      "text": "",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 92,
+      "text": "---",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 93,
+      "text": "",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 94,
+      "text": "## Часть B. REST API",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 95,
+      "text": "",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 96,
+      "text": "Дочерний документ части A: «Уведомление о расходах по карте — REST API».",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 97,
+      "text": "",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 98,
+      "text": "### Общие параметры",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 99,
+      "text": "",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 100,
+      "text": "| Поле | Значение |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 101,
+      "text": "| :--- | :--- |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 102,
+      "text": "| **Description** | Сохранение порога. Функциональные требования: чтение порога |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 103,
+      "text": "| **REST type** | GET |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 104,
+      "text": "| **Authorization** | Bearer, сессия владельца карты |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 105,
+      "text": "| **Controller** | AlertsController |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 106,
+      "text": "| **URL type** | Dev / Prod |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 107,
+      "text": "| **Request URL** | Dev: `/alerts/saveLimit` . Prod: — |",
+      "page": 2,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 108,
+      "text": "| **CURL** | `curl -G \"$BASE/alerts/saveLimit\" -H \"Authorization: Bearer $TOKEN\" --data 'cardId=demo-42&amount=50000&enabled=1'` |",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 109,
+      "text": "| **Swagger** | — |",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 110,
+      "text": "| **Gitlab project** | Учебный контур |",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 111,
+      "text": "| **Framework** | Учебный контур |",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 112,
+      "text": "| **Author** | Школа тестирования |",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 113,
+      "text": "| **Developer** | Команда практикума |",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 114,
+      "text": "",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 115,
+      "text": "### Логика работы метода",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 116,
+      "text": "1. Проверить пользовательскую сессию.",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 117,
+      "text": "2. Проверить принадлежность карты клиенту.",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 118,
+      "text": "3. Проверить сумму и переключатель.",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 119,
+      "text": "4. Заменить настройку и вернуть результат сохранения.",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 120,
+      "text": "5. При отклонении суммы вернуть прежнее состояние и результат ERROR.",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 121,
+      "text": "",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 122,
+      "text": "### Особые правила",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 123,
+      "text": "1. Целое число тенге, обе границы включены.",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 124,
+      "text": "2. Повторное сохранение заменяет действующую настройку.",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 125,
+      "text": "3. Изменение порога сохраняет накопленные расходы.",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 126,
+      "text": "",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 127,
+      "text": "### Схема",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 128,
+      "text": "```text",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 129,
+      "text": "Приложение → AlertsController → хранилище настроек → AlertsController → приложение.",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 130,
+      "text": "```",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 131,
+      "text": "",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 132,
+      "text": "### Параметры запроса",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 133,
+      "text": "",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 134,
+      "text": "#### Path-параметры",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 135,
+      "text": "Не используются.",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 136,
+      "text": "",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 137,
+      "text": "#### Query-параметры",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 138,
+      "text": "",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 139,
+      "text": "| Parameter | Format | Size | Mandatory | Logic | Description | DB field |",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 140,
+      "text": "| :--- | :--- | :--- | :--- | :--- | :--- | :--- |",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 141,
+      "text": "| `cardId` | string | 1–64 | Да | Карта клиента | Идентификатор карты | `card_id` |",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 142,
+      "text": "| `amount` | integer | 32 bit | Да | 1 000–1 000 000 | Порог в тенге | `limit_kzt` |",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 143,
+      "text": "| `enabled` | integer | 1 знак | Да | 0 или 1 | Признак включения | `enabled` |",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 144,
+      "text": "",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 145,
+      "text": "#### Request body",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 146,
+      "text": "* **Content-Type:** `application/json` .",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 147,
+      "text": "* Тело не используется.",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 148,
+      "text": "",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 149,
+      "text": "### Ответ",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 150,
+      "text": "Если результат 200 или 201 — успешный. Если результат 400, 401 и далее — неуспешный.",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 151,
+      "text": "",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 152,
+      "text": "| Parameter | Format | Logic | Description | DB field |",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 153,
+      "text": "| :--- | :--- | :--- | :--- | :--- |",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 154,
+      "text": "| `result` | string | OK / ERROR | Исход сохранения | — |",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 155,
+      "text": "| `amount` | string | При успехе | Порог в тенге | `limit_kzt` |",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 156,
+      "text": "| `enabled` | string | «0» или «1» | Признак включения | `enabled` |",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 157,
+      "text": "| `message` | string | При ошибке | Описание ошибки | — |",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 158,
+      "text": "",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 159,
+      "text": "### Статусы",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 160,
+      "text": "",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 161,
+      "text": "**200.** Ответ в случае успешного выполнения метода.",
+      "page": 3,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 162,
+      "text": "**400.** Ответ в случае, если параметры запроса заполнены неверно.",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 163,
+      "text": "",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 164,
+      "text": "#### 200. Successful — Created",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 165,
+      "text": "```json",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 166,
+      "text": "{\"result\":\"OK\",\"amount\":\"50000\",\"enabled\":\"1\"}",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 167,
+      "text": "```",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 168,
+      "text": "или",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 169,
+      "text": "```json",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 170,
+      "text": "{\"result\":\"ERROR\",\"message\":\"Проверьте сумму\"}",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 171,
+      "text": "```",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 172,
+      "text": "",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 173,
+      "text": "**401.** Ответ в случае, если запрос выполнен без необходимой авторизации.",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 174,
+      "text": "**403.** Ответ в случае, если на указанный ресурс доступ запрещен.",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 175,
+      "text": "**500.** Ответ в случае, если произошла внутренняя ошибка сервера.",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 176,
+      "text": "",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 177,
+      "text": "#### 400. Unsuccessful — Bad request",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 178,
+      "text": "```json",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 179,
+      "text": "{\"message\":\"Некорректный запрос\"}",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 180,
+      "text": "```",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 181,
+      "text": "",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 182,
+      "text": "#### 401. Unsuccessful — Unauthorized",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 183,
+      "text": "```json",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 184,
+      "text": "{\"message\":\"Требуется вход\"}",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 185,
+      "text": "```",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 186,
+      "text": "",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 187,
+      "text": "#### 403. Unsuccessful — Forbidden",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 188,
+      "text": "Для чужой карты возвращается 404, как и для отсутствующей карты.",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 189,
+      "text": "**404**",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 190,
+      "text": "```json",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 191,
+      "text": "{\"message\":\"Карта не найдена\"}",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 192,
+      "text": "```",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 193,
+      "text": "",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 194,
+      "text": "#### 500. Unsuccessful — Internal server error",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 195,
+      "text": "```json",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 196,
+      "text": "{\"message\":\"Ошибка сервиса\"}",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    },
+    {
+      "number": 197,
+      "text": "```",
+      "page": 4,
+      "heading_level": null,
+      "table_row": false
+    }
+  ],
+  "warnings": [],
+  "page_count": 4
+}

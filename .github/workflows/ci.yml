@@ -32,3 +32,9 @@ jobs:
         run: |
           docker build -t bcc-reqvalidator:2.0.1 .
           test "$(docker run --rm bcc-reqvalidator:2.0.1 --version)" = "v2.0.1"
+      - name: Check web demo without API keys
+        run: |
+          trap 'docker compose down' EXIT
+          docker compose up -d --build
+          curl --fail --silent --show-error --retry 15 --retry-all-errors --retry-delay 1 --max-time 3 http://127.0.0.1:8000/api/config
+          python -m unittest tests.web_http_smoke -v

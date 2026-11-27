@@ -16,11 +16,11 @@ import tempfile
 
 from . import VERSION_TAG
 from .config import ConfigurationError, Settings
-from .document import DocumentError, load_document
+from .document import Document, DocumentError, load_document
 from .llm import OpenAIReviewer, Reviewer, ReviewError
 from .report import render_json, render_markdown
 from .review import ReviewEngine, ReviewLimitError
-from .timing import RunTimings
+from .timing import ProgressObserver, RunTimings
 
 
 def _revision() -> str:
@@ -85,6 +85,8 @@ def main(
     argv: Sequence[str] | None = None,
     *,
     reviewer_factory: Callable[[Settings], Reviewer] = OpenAIReviewer,
+    progress_observer: ProgressObserver | None = None,
+    source_observer: Callable[[Document], None] | None = None,
 ) -> int:
     parser = argparse.ArgumentParser(
         prog="reqvalidator", description="Проверка качества требований с русским отчётом.",
@@ -126,15 +128,25 @@ def main(
             else:
                 progress = configuration.progress and not configuration.quiet
                 show_timings = configuration.timings
-                if progress or show_timings:
-                    timings = RunTimings(progress=stderr if progress else None)
+                if progress or show_timings or progress_observer is not None:
+                    timings = RunTimings(progress=stderr if progress else None, observer=progress_observer)
             with timings.stage("extract") if timings is not None else nullcontext():
                 document = load_document(args.input)
             # Preserve precedence of document errors over configuration errors.
             if isinstance(configuration, ConfigurationError):
                 raise configuration
             settings = configuration
+            if source_observer is not None:
+                source_observer(document)
         except (DocumentError, ConfigurationError, OSError, ValueError) as error:
+            if progress_observer is not None:
+                if isinstance(error, DocumentError):
+                    problem = "document"
+                    if str(error) in {"Входной файл пуст.", "В документе нет доступного текста для проверки."}:
+                        problem = "empty"
+                else:
+                    problem = "configuration" if isinstance(error, ConfigurationError) else "input"
+                progress_observer({"kind": "problem", "problem": problem})
             print(f"Ошибка входа или конфигурации. {error}", file=sys.stderr)
             return 2
 
@@ -162,6 +174,8 @@ def main(
                     document, model=settings.model, provider=settings.provider, version=_revision(),
                 )
         except ReviewLimitError as error:
+            if progress_observer is not None:
+                progress_observer({"kind": "problem", "problem": "limit"})
             print(f"Вход невозможно проверить целиком. {error}", file=sys.stderr)
             return 2
         except ReviewError as error:
@@ -193,6 +207,8 @@ def main(
             )
         return 3 if report.failed_stages else 0
     finally:
+        if progress_observer is not None and timings is not None:
+            progress_observer({"kind": "timings", "timings": timings.as_dict()})
         if show_timings and timings is not None:
             for line in timings.summary_lines():
                 stderr(line)
